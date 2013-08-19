@@ -30,8 +30,8 @@ Development Workflow
 ====================
 
 drc help    # Print help info
+drc list	# List all projects on the drc website
 drc reset   # Deletes all prj/build directories to create a known state
-drc fetch   # Fetch on all the git repos
 
 drc build <directories>     # Adds a build folder to each directory and builds each based on their debian dependencies
 
@@ -39,5 +39,27 @@ drc build <directories>     # Adds a build folder to each directory and builds e
 1. checkout or create a new repository
 2. mkdir build;cd build;cmake .. on each new repository
 3. Code, make, test
-:
+4. cpack, tag, publish
+
+
+stable
+testing
+
+
+
+drc publish <name>
+	
+	Increment version build number
+	Run cpack
+	Git tag with version number
+	scp .deb to server
+
+
+
+
+
+
+
+
+
 

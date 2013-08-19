@@ -1,0 +1,65 @@
+#!/bin/sh
+
+function usage {
+	cat <<"==="
+
+Usage:
+
+	teh setup					# Initial setup
+	teh list					# List available repositories
+
+	teh get <project_name>		# Git clone or git pull
+	teh new_lib <project_name>	# Create a new library repository
+	teh new_bin <project_name>	# Create a new executable repository
+
+	teh build <project_name>	# Create new <project_name>/build; cmake ..
+	teh publish <project_name>	# Make packages and upload to server
+
+
+
+	publish:	Publish auto increments the version number, then runs cpack 
+===
+
+}
+
+if [ $# -lt 1 ]
+then
+	usage
+	exit
+fi
+
+case "$1" in
+
+list) echo "ls ~/git" | ssh drc@90.147.26.149 /bin/bash
+	;;
+
+setup) cat <<"==="
+2. Clone Build_Tools, CMakeModules, DemoLIB, DemoBIN
+3. Add $(pwd)/Build_Tools/bin to path
+===
+	;;
+
+publish) 
+	read -p "Does $2 have non-backward compatible changes? [y/N] " api_change
+	api_change=${api_change:-N}
+	if [ $api_change = "N" ]; then
+		read -p "Does $2 have new (but backward compatible) features? [y/N] " feature_change
+		feature_change=${feature_change:-N}
+
+		if [ $feature_change = "N" ]; then
+			echo "Increment only build version"
+		else
+			echo "Increment feature version, zero build version"
+		fi
+
+	else
+		echo "Increment API version, zero others"	
+	fi
+cat <<"==="
+
+
+
+
+===
+esac
+
