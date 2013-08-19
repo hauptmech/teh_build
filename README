@@ -1,0 +1,43 @@
+
+The goal of this project layout is to provide a very low barrier to entry for 
+starting new modules, a very simple module structure, and easy expansion.
+
+A compromise we make is that we allow lots of parallel directories and 
+repositories. 
+
+
+To ease work, we provide some scripts to help out.
+
+
+Directories:
+
+./CMakeModules      #Houses FindXXXX.cmake files for our project
+./Build_Tools       #Scripts for building sources
+
+
+
+
+
+Normally you will be using the libraries of others as installed 
+binaries.
+
+
+sudo apt-get update
+sudo apt-get upgrade
+
+
+Development Workflow
+====================
+
+drc help    # Print help info
+drc reset   # Deletes all prj/build directories to create a known state
+drc fetch   # Fetch on all the git repos
+
+drc build <directories>     # Adds a build folder to each directory and builds each based on their debian dependencies
+
+
+1. checkout or create a new repository
+2. mkdir build;cd build;cmake .. on each new repository
+3. Code, make, test
+:
+
