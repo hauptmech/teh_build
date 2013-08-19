@@ -1,5 +1,7 @@
 #!/bin/sh
 
+SERVER_IP=90.147.26.149
+
 function usage {
 	cat <<"==="
 
@@ -30,14 +32,73 @@ fi
 
 case "$1" in
 
-list) echo "ls ~/git" | ssh drc@90.147.26.149 /bin/bash
+list) echo "ls ~/git" | ssh drc@$SERVER_IP /bin/bash
 	;;
+
 
 setup) cat <<"==="
 2. Clone Build_Tools, CMakeModules, DemoLIB, DemoBIN
 3. Add $(pwd)/Build_Tools/bin to path
 ===
 	;;
+
+get)	# Get an existing repository
+		if [ ${2: -4} = ".git" ]; then
+			echo "ERROR: Re-run the command without the .git extension... I'll add that automatically."
+			exit 1
+		fi
+
+		git clone drc@$SERVER_IP:/home/drc/git/${2}.git
+		
+		if [ ! $? -eq 0 ]; then
+			echo "git clone failed... double check the name (or server ip address hardcoded in the teh script"
+		fi
+;;
+
+new)	# Create a new repository on the server
+
+		if [ ${2: -4} = ".git" ]; then
+			echo "ERROR: Re-run the command without the .git extension... I'll add that automatically."
+			exit 1
+		fi
+
+		echo "mkdir ~/git/${2}.git && git init --bare ~/git/${2}.git" | ssh drc@$SERVER_IP /bin/bash &>/dev/null
+		if [ $? -eq 0 ]; then
+			existed=0
+			echo "Success!"
+		else
+			existed=1
+			echo "This repo appears to exist already..."
+		fi
+
+		if [ ! -d ${2} ]; then
+			echo "You need to create the directory locally first."
+			select what_to_do in "Use bin (exe) template?" "Use library template?" "Abort!"; do
+				case $REPLY in
+					1) cp -ar DemoBIN $2; rm -rf $2/.git $2/build; break;;
+					2) cp -ar DemoLIB $2; rm -rf $2/.git $2/build; break;;
+					3) echo "Aborting new repo!"; exit ;;
+				esac
+			done
+			cd $2; git init; git add .; git commit -m 'First!';
+			git remote add origin drc@$SERVER_IP:/home/drc/git/${2}.git
+			git push origin master
+			cd ..
+		elif [ -d $2/.git ]; then
+			if [ $existed -eq 0 ]; then
+				echo "There is already a git repo with that name locally. Pushing it up to the new repo on the server!"
+				cd $2; 	
+				git remote add origin drc@$SERVER_IP:/home/drc/git/${2}.git &>/dev/null || git remote remove origin; \
+				git remote add origin drc@$SERVER_IP:/home/drc/git/${2}.git 
+				git push origin master
+				cd ..
+				exit
+			else
+				echo "There is already a git repo with that name locally. Aborting with no changes made."
+				exit
+			fi
+		fi
+;;
 
 publish) 
 	read -p "Does $2 have non-backward compatible changes? [y/N] " api_change
