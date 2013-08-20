@@ -56,7 +56,10 @@ drc publish <name>
 
 
 
-
+drc setup
+	Create ~/.tehrc
+	Add repository to /etc/apt/sources.list.d/drc.list
+		deb https://exadvr/ubuntu raring drc
 
 
 

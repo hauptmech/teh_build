@@ -1,126 +1,210 @@
 #!/bin/sh
+#
+# Traveler Hauptman, Istituto Italiano di Tecnologia, 20 Aug 2013
+# 
+# Repo Build Publish helper utility
 
-SERVER_IP=90.147.26.149
+
+SERVER_USER=drc
+SERVER_NAME=debiangpm
+
+# If user config file exists, use it
+if [ -f ~/.teh ]; then
+	source ~/.tehrc
+fi
+
+# If local config file exists, use it
+if [ -f ./.teh ]; then
+	source ./.tehrc
+fi
 
 function usage {
-	cat <<"==="
+	echo $1
+	sed  -e "s|teh|${1}|"  <<"==="
 
 Usage:
 
-	teh setup					# Initial setup
-	teh list					# List available repositories
+	teh list                    # List available repositories
 
-	teh get <project_name>		# Git clone or git pull
-	teh new_lib <project_name>	# Create a new library repository
-	teh new_bin <project_name>	# Create a new executable repository
+	teh get <project_name>      # Git clone or git pull
+	teh new <project_name>      # Create a new repository from template
 
-	teh build <project_name>	# Create new <project_name>/build; cmake ..
-	teh publish <project_name>	# Make packages and upload to server
+	teh build <project_name>    # Create new <project_name>/build; cmake ..
+	teh publish <project_name>  # Make packages and upload to server
 
 
+	teh setup                   # Initial setup
+	teh make_keys               # Install the keys for the server
 
-	publish:	Publish auto increments the version number, then runs cpack 
+
+	publish:  Publish auto increments the version number, then runs cpack to build
+	          the debian packages, the uploads them to the server for others to
+	          use.
+
+	build:    Build creates a clean build of a <project> by removing the 
+	          <project>/build directory, recreating it, and the running first
+	          cmake and then make.
 ===
 
 }
 
-if [ $# -lt 1 ]
-then
-	usage
-	exit
-fi
-
-case "$1" in
-
-list) echo "ls ~/git" | ssh drc@$SERVER_IP /bin/bash
-	;;
-
-
-setup) cat <<"==="
-2. Clone Build_Tools, CMakeModules, DemoLIB, DemoBIN
-3. Add $(pwd)/Build_Tools/bin to path
-===
-	;;
-
-get)	# Get an existing repository
-		if [ ${2: -4} = ".git" ]; then
+function check_for_git_extension
+{
+		if [ ${1: -4} = ".git" ]; then
 			echo "ERROR: Re-run the command without the .git extension... I'll add that automatically."
 			exit 1
 		fi
+}		
 
-		git clone drc@$SERVER_IP:/home/drc/git/${2}.git
+# Get ssl certificates, install them, and add package repository to sources.list.d
+function setup_package_repo{
+		mkdir -p /usr/local/share/ca-certificates
+		sudo scp $SERVER_USER@$SERVER_NAME:/etc/ssl/certs/traveler.crt /usr/local/share/ca-certificates
+		sudo update-ca-certificates
+
+		sudo sh -c 'echo "deb https://$SERVER_NAME/ubuntu raring_drc/" > /etc/apt/sources.list.d/drc.list'
+		sudo apt-get update
+		
+		if [ ! $? -eq 0 ]; then
+			echo "Something went wrong! Ask someone for help..."
+		fi
+}
+
+# Add server to hosts file and .tehrc
+function setup_hosts{
+		sudo echo "$1	$2" >> /etc/hosts
+}
+
+#Grabs the shared private key from the server and installs it.
+#We should create individual keys instead!!!
+function setup_ssh_keys{
+		mkdir -p ~/.ssh
+		echo "Copying the key from the server... "
+		scp $SERVER_USER@$SERVER_NAME:.ssh/$SERVER_USER_rsa ~/.ssh
+		echo "Adding the details to ~/.ssh/config"
+		echo "Host $SERVER_NAME" >> ~/.ssh/config
+		echo "IdentityFile ~/.ssh/$SERVER_USER_rsa" >> ~/.ssh/config
+		echo "User $SERVER_USER" >> ~/.ssh/config
+		echo "" >> ~/.ssh/config
+}
+function new_repo {
+
+	check_for_git_extension $1
+
+	echo "mkdir ~/git/${1}.git && git init --bare ~/git/${1}.git" | ssh $SERVER_USER@$SERVER_NAME /bin/bash &>/dev/null
+	if [ $? -eq 0 ]; then
+		existed=0
+		echo "Success!"
+	else
+		existed=1
+		echo "This repo appears to exist already..."
+	fi
+
+	if [ ! -d ${1} ]; then
+		echo "You need to create the directory locally first."
+		select what_to_do in "Use bin (exe) template?" "Use library template?" "Abort!"; do
+			case $REPLY in
+				1) cp -ar DemoBIN $1; rm -rf $1/.git $1/build; break;;
+				2) cp -ar DemoLIB $1; rm -rf $1/.git $1/build; break;;
+				3) echo "Aborting new repo!"; exit ;;
+			esac
+		done
+		cd $1; git init; git add .; git commit -m 'First!';
+		git remote add origin $SERVER_USER@$SERVER_NAME:/home/$SERVER_USER/git/${1}.git
+		git push origin master
+		cd ..
+	elif [ -d $1/.git ]; then
+		if [ $existed -eq 0 ]; then
+			echo "There is already a git repo with that name locally."
+			echo "      Pushing it up to the new repo on the server!"
+			cd $1; 	
+			git remote add origin $SERVER_USER@$SERVER_NAME:/home/$SERVER_USER/git/${1}.git \ 
+			 &>/dev/null || git remote remove origin; \
+			git remote add origin $SERVER_USER@$SERVER_NAME:/home/$SERVER_USER/git/${1}.git 
+
+			git push origin master
+			cd ..
+			exit
+		else
+			echo "There is already a git repo with that name locally."
+			echo "      Aborting with no changes made."
+			exit
+		fi
+	fi
+
+}
+
+# If called with no parameters, print usage
+if [ $# -lt 1 ]
+then
+	usage $0
+	exit
+fi
+
+# Check which command was given
+case "$1" in
+
+	help) # Print out help
+		usage $0
+		;;
+
+	list) echo "echo '';ls ~/git | sed -e 's/.git//'" | ssh $SERVER_USER@$SERVER_NAME /bin/bash
+		;;
+
+
+	setup) cat <<"==="
+	2. Clone Build_Tools, CMakeModules, DemoLIB, DemoBIN
+	3. Add $(pwd)/Build_Tools/bin to path
+===
+		;;
+
+	get)	# Get an existing repository
+
+		check_for_git_extension $1
+	
+		git clone $SERVER_USER@$SERVER_NAME:/home/$SERVER_USER/git/${2}.git
 		
 		if [ ! $? -eq 0 ]; then
 			echo "git clone failed... double check the name (or server ip address hardcoded in the teh script"
 		fi
-;;
+	;;
 
-new)	# Create a new repository on the server
+	new)	# Create a new repository on the server
+	;;
 
-		if [ ${2: -4} = ".git" ]; then
-			echo "ERROR: Re-run the command without the .git extension... I'll add that automatically."
-			exit 1
-		fi
+	publish) 
+		read -p "Does $2 have non-backward compatible changes? [y/N] " api_change
+		api_change=${api_change:-N}
+		if [ $api_change = "N" ]; then
+			read -p "Does $2 have new (but backward compatible) features? [y/N] " feature_change
+			feature_change=${feature_change:-N}
 
-		echo "mkdir ~/git/${2}.git && git init --bare ~/git/${2}.git" | ssh drc@$SERVER_IP /bin/bash &>/dev/null
-		if [ $? -eq 0 ]; then
-			existed=0
-			echo "Success!"
-		else
-			existed=1
-			echo "This repo appears to exist already..."
-		fi
-
-		if [ ! -d ${2} ]; then
-			echo "You need to create the directory locally first."
-			select what_to_do in "Use bin (exe) template?" "Use library template?" "Abort!"; do
-				case $REPLY in
-					1) cp -ar DemoBIN $2; rm -rf $2/.git $2/build; break;;
-					2) cp -ar DemoLIB $2; rm -rf $2/.git $2/build; break;;
-					3) echo "Aborting new repo!"; exit ;;
-				esac
-			done
-			cd $2; git init; git add .; git commit -m 'First!';
-			git remote add origin drc@$SERVER_IP:/home/drc/git/${2}.git
-			git push origin master
-			cd ..
-		elif [ -d $2/.git ]; then
-			if [ $existed -eq 0 ]; then
-				echo "There is already a git repo with that name locally. Pushing it up to the new repo on the server!"
-				cd $2; 	
-				git remote add origin drc@$SERVER_IP:/home/drc/git/${2}.git &>/dev/null || git remote remove origin; \
-				git remote add origin drc@$SERVER_IP:/home/drc/git/${2}.git 
-				git push origin master
-				cd ..
-				exit
+			if [ $feature_change = "N" ]; then
+				echo "Increment only build version"
 			else
-				echo "There is already a git repo with that name locally. Aborting with no changes made."
-				exit
+				echo "Increment feature version, zero build version"
 			fi
-		fi
-;;
 
-publish) 
-	read -p "Does $2 have non-backward compatible changes? [y/N] " api_change
-	api_change=${api_change:-N}
-	if [ $api_change = "N" ]; then
-		read -p "Does $2 have new (but backward compatible) features? [y/N] " feature_change
-		feature_change=${feature_change:-N}
-
-		if [ $feature_change = "N" ]; then
-			echo "Increment only build version"
 		else
-			echo "Increment feature version, zero build version"
+			echo "Increment API version, zero others"	
 		fi
-
-	else
-		echo "Increment API version, zero others"	
-	fi
-cat <<"==="
+	cat <<"==="
 
 
 
 
 ===
+	;;
+	make_ssh_keys)	# Install the ssh keys so you don't have to type them all the time
+		setup_ssh_keys ;;
+
+	setup_repo)	# Install ssl keys and sources.list file
+		setup_package_repo ;;
+
+	set_server) #Add 
+
+		setup_hosts $1 $2 ;;
+
+
 esac
 
