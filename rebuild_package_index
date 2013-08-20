@@ -1,0 +1,13 @@
+#!/bin/bash
+
+if [ $# -eq 0 ]; then
+REPO_DIR=/var/ubuntu_repo/raring_drc
+else
+REPO_DIR=$1
+fi
+
+dpkg-scanpackages $REPO_DIR /dev/null | gzip -9c > $REPO_DIR/Packages.gz
+
+
+
+

@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # Traveler Hauptman, Istituto Italiano di Tecnologia, 20 Aug 2013
 # 
@@ -18,7 +18,8 @@ if [ -f ./.teh ]; then
 	source ./.tehrc
 fi
 
-function usage {
+function usage 
+{
 	echo $1
 	sed  -e "s|teh|${1}|"  <<"==="
 
@@ -58,7 +59,7 @@ function check_for_git_extension
 
 function abort_if_project_does_not_exist
 {
-	if [ ! -d $1 ]
+	if [ ! -d $1 ]; then
 		echo "ERROR: The directory $1 (and hence the project $1) does not exist!"
 		exit
 	fi
@@ -66,14 +67,15 @@ function abort_if_project_does_not_exist
 
 function abort_if_project_is_not_active
 {
-	if [ ! -d $1/build ]
+	if [ ! -d $1/build ]; then
 		echo "ERROR: The build directory for $1 (and hence $1 is deactivated)!"
 		exit
 	fi
 }
 
 # Get ssl certificates, install them, and add package repository to sources.list.d
-function setup_package_repo{
+function setup_package_repo
+{
 		mkdir -p /usr/local/share/ca-certificates
 		sudo scp $SERVER_USER@$SERVER_NAME:/etc/ssl/certs/traveler.crt /usr/local/share/ca-certificates
 		sudo update-ca-certificates
@@ -87,13 +89,16 @@ function setup_package_repo{
 }
 
 # Add server to hosts file and .tehrc
-function setup_hosts{
+function setup_hosts
+{
 		sudo echo "$1	$2" >> /etc/hosts
+
 }
 
 #Grabs the shared private key from the server and installs it.
 #We should create individual keys instead!!!
-function setup_ssh_keys{
+function setup_ssh_keys
+{
 		mkdir -p ~/.ssh
 		echo "Copying the key from the server... "
 		scp $SERVER_USER@$SERVER_NAME:.ssh/$SERVER_USER_rsa ~/.ssh
@@ -103,7 +108,8 @@ function setup_ssh_keys{
 		echo "User $SERVER_USER" >> ~/.ssh/config
 		echo "" >> ~/.ssh/config
 }
-function new_repo {
+function new_repo 
+{
 
 	check_for_git_extension $1
 
@@ -189,7 +195,15 @@ case "$1" in
 	;;
 
 	publish) 
+		# Remove old packages
+		# Increment version numbers
+		# Build new packages
+		# Copy *.deb to repository
+		# Rebuild repository index
 		abort_if_project_does_not_exist $2
+		abort_if_project_is_not_active $2
+		rm $2/build/*.deb	#Delete old debs
+
 		read -p "Does $2 have non-backward compatible changes? [y/N] " api_change
 		api_change=${api_change:-N}
 		if [ $api_change = "N" ]; then
@@ -201,27 +215,17 @@ case "$1" in
 				#Perl fu from the interwebs
 				perl -pi.bak -e \
 					's/VERSION_PATCH \"(\d+)\"/ q{VERSION_PATCH "} . (1 + $1) . q{"} /ge' \
-					CMakeLists.txt
-				perl -pi.bak -e \
-					's/VERSION_MAJOR \"(\d+)\"/ q{VERSION_MAJOR "} . (0) . q{"} /ge' \
-					CMakeLists.txt
-				perl -pi.bak -e \
-					's/VERSION_MINOR \"(\d+)\"/ q{VERSION_MINOR "} . (0) . q{"} /ge' \
-					CMakeLists.txt
-
+					$2/CMakeLists.txt
 
 			else
 				echo "Increment feature version, zero build version"
 				#Perl fu from the interwebs
 				perl -pi.bak -e \
 					's/VERSION_PATCH \"(\d+)\"/ q{VERSION_PATCH "} . (0) . q{"} /ge' \
-					CMakeLists.txt
-				perl -pi.bak -e \
-					's/VERSION_MAJOR \"(\d+)\"/ q{VERSION_MAJOR "} . (0) . q{"} /ge' \
-					CMakeLists.txt
+					$2/CMakeLists.txt
 				perl -pi.bak -e \
 					's/VERSION_MINOR \"(\d+)\"/ q{VERSION_MINOR "} . (1 + $1) . q{"} /ge' \
-					CMakeLists.txt
+					$2/CMakeLists.txt
 
 
 			fi
@@ -231,13 +235,13 @@ case "$1" in
 				#Perl fu from the interwebs
 				perl -pi.bak -e \
 					's/VERSION_PATCH \"(\d+)\"/ q{VERSION_PATCH "} . (0) . q{"} /ge' \
-					CMakeLists.txt
-				perl -pi.bak -e \
-					's/VERSION_MAJOR \"(\d+)\"/ q{VERSION_MAJOR "} . (1 + $1) . q{"} /ge' \
-					CMakeLists.txt
+					$2/CMakeLists.txt
 				perl -pi.bak -e \
 					's/VERSION_MINOR \"(\d+)\"/ q{VERSION_MINOR "} . (0) . q{"} /ge' \
-					CMakeLists.txt
+					$2/CMakeLists.txt
+				perl -pi.bak -e \
+					's/VERSION_MAJOR \"(\d+)\"/ q{VERSION_MAJOR "} . (1 + $1) . q{"} /ge' \
+					$2/CMakeLists.txt
 
 
 		fi
@@ -250,6 +254,9 @@ case "$1" in
 		cmake ..  #If the version changed we need to run cmake to update it
 		make		#Just to be sure 
 		cpack		#Finally do the packaging
+	
+		scp *.deb $SERVER_USER@$SERVER_NAME:/var/ubuntu_repo/raring_drc
+		echo "sh rebuild_package_index; ls -l /var/ubuntu_repo/raring_drc" | ssh $SERVER_USER@$SERVER_NAME /bin/bash
 		cd ../..
 		ls $2/build | grep deb
 		
