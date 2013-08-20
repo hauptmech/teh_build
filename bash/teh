@@ -56,6 +56,22 @@ function check_for_git_extension
 		fi
 }		
 
+function abort_if_project_does_not_exist
+{
+	if [ ! -d $1 ]
+		echo "ERROR: The directory $1 (and hence the project $1) does not exist!"
+		exit
+	fi
+}
+
+function abort_if_project_is_not_active
+{
+	if [ ! -d $1/build ]
+		echo "ERROR: The build directory for $1 (and hence $1 is deactivated)!"
+		exit
+	fi
+}
+
 # Get ssl certificates, install them, and add package repository to sources.list.d
 function setup_package_repo{
 		mkdir -p /usr/local/share/ca-certificates
@@ -173,6 +189,7 @@ case "$1" in
 	;;
 
 	publish) 
+		abort_if_project_does_not_exist $2
 		read -p "Does $2 have non-backward compatible changes? [y/N] " api_change
 		api_change=${api_change:-N}
 		if [ $api_change = "N" ]; then
@@ -181,13 +198,62 @@ case "$1" in
 
 			if [ $feature_change = "N" ]; then
 				echo "Increment only build version"
+				#Perl fu from the interwebs
+				perl -pi.bak -e \
+					's/VERSION_PATCH \"(\d+)\"/ q{VERSION_PATCH "} . (1 + $1) . q{"} /ge' \
+					CMakeLists.txt
+				perl -pi.bak -e \
+					's/VERSION_MAJOR \"(\d+)\"/ q{VERSION_MAJOR "} . (0) . q{"} /ge' \
+					CMakeLists.txt
+				perl -pi.bak -e \
+					's/VERSION_MINOR \"(\d+)\"/ q{VERSION_MINOR "} . (0) . q{"} /ge' \
+					CMakeLists.txt
+
+
 			else
 				echo "Increment feature version, zero build version"
+				#Perl fu from the interwebs
+				perl -pi.bak -e \
+					's/VERSION_PATCH \"(\d+)\"/ q{VERSION_PATCH "} . (0) . q{"} /ge' \
+					CMakeLists.txt
+				perl -pi.bak -e \
+					's/VERSION_MAJOR \"(\d+)\"/ q{VERSION_MAJOR "} . (0) . q{"} /ge' \
+					CMakeLists.txt
+				perl -pi.bak -e \
+					's/VERSION_MINOR \"(\d+)\"/ q{VERSION_MINOR "} . (1 + $1) . q{"} /ge' \
+					CMakeLists.txt
+
+
 			fi
 
 		else
 			echo "Increment API version, zero others"	
+				#Perl fu from the interwebs
+				perl -pi.bak -e \
+					's/VERSION_PATCH \"(\d+)\"/ q{VERSION_PATCH "} . (0) . q{"} /ge' \
+					CMakeLists.txt
+				perl -pi.bak -e \
+					's/VERSION_MAJOR \"(\d+)\"/ q{VERSION_MAJOR "} . (1 + $1) . q{"} /ge' \
+					CMakeLists.txt
+				perl -pi.bak -e \
+					's/VERSION_MINOR \"(\d+)\"/ q{VERSION_MINOR "} . (0) . q{"} /ge' \
+					CMakeLists.txt
+
+
 		fi
+
+		if [ -d $2/build ]; then 
+			cd $2/build; 
+		else 
+			echo "Project has not been built yet; do this manually!"; exit 
+		fi
+		cmake ..  #If the version changed we need to run cmake to update it
+		make		#Just to be sure 
+		cpack		#Finally do the packaging
+		cd ../..
+		ls $2/build | grep deb
+		
+
 	cat <<"==="
 
 
