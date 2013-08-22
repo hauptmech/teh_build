@@ -5,7 +5,7 @@ SERVER_USER=drc
 SERVER_NAME=debiangpm
 
 # 1. Set drc server
-sudo echo "$SERVER_IP   $SERVER_NAME" >> /etc/hosts
+sudo sh -c 'echo "$SERVER_IP   $SERVER_NAME" >> /etc/hosts'
 
 # 2. Set drc package repo
 
