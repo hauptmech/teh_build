@@ -9,18 +9,22 @@
 #    2: Adds the repository server name and subfolder to the apt sources.list
 #    3: Runs 'apt-get update' and installs the teh-build-tools script
 
+cat > ~/.tehrc <<'==='
 SERVER_IP=90.147.26.149
 SERVER_USER=drc
 SERVER_NAME=debiangpm
 REPOSITORY=raring_drc
+===
+
+. ~/.tehrc 
 
 # 1. Set drc server
 sudo sh -c "echo \"$SERVER_IP   $SERVER_NAME\" >> /etc/hosts"
 
 # 2. Set drc package repo
 
-echo "deb http://$SERVER_NAME/ubuntu $REPOSITORY/" > ~/.drc.list
-sudo cp ~/.drc.list /etc/apt/sources.list.d/drc.list
+echo "deb http://$SERVER_NAME/ubuntu $REPOSITORY/" > ~/.${REPOSITORY}.list
+sudo cp ~/.${REPOSITORY}.list /etc/apt/sources.list.d/${REPOSITORY}.list
 sudo apt-get update
 
 
