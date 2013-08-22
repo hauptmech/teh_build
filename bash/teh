@@ -151,7 +151,9 @@ function new_repo
 
 	check_for_git_extension $1
 
-	echo "mkdir ~/git/${1}.git && git init --bare ~/git/${1}.git" | ssh $SERVER_USER@$SERVER_NAME /bin/bash &>/dev/null
+	# We need to make a multi-level directory if necessary.
+	echo -e "\nChecking to see if this repo is on the server...\n"
+	echo "[ ! -d ~/git/${1}.git ] && mkdir -p ~/git/${1}.git" | ssh $SERVER_USER@$SERVER_NAME /bin/bash &>/dev/null
 	if [ $? -eq 0 ]; then
 		existed=0
 		echo "There is no repo of this name on the server yet."
@@ -164,25 +166,29 @@ function new_repo
 
 	if [ ! -d ${1} ]; then
 		echo "We need to create the directory locally first."
+		mkdir -p $1
 		select what_to_do in "Use bin (exe) template?" "Use library template?" "Abort!"; do
 			case $REPLY in
-				1) cp -ar Demo_Application $1; rm -rf $1/.git $1/build; break;;
-				2) cp -ar Demo_Library $1; rm -rf $1/.git $1/build; break;;
+				1) cp -ar Demo_Application/* $1; rm -rf $1/.git $1/build; break;;
+				2) cp -ar Demo_Library/* $1; rm -rf $1/.git $1/build; break;;
 				3) echo "Aborting new repo!"; exit ;;
 			esac
 		done
 		cd $1; git init; git add .; git commit -m 'First!';
 		git remote add origin $SERVER_USER@$SERVER_NAME:/home/$SERVER_USER/git/${1}.git
+		echo -e "\nCreating this repo on the server...\n"
+		echo "git init --bare ~/git/${1}.git" | ssh $SERVER_USER@$SERVER_NAME /bin/bash &>/dev/null
 		git push origin master
 		cd ..
 	elif [ -d $1/.git ]; then
 		if [ $existed -eq 0 ]; then
 			echo "There is already a git repo with that name locally."
-			echo "      Pushing it up to the new repo on the server!"
+			echo -e "      Pushing it up to the new repo on the server!\n"
 			cd $1; 	
-			git remote add origin $SERVER_USER@$SERVER_NAME:/home/$SERVER_USER/git/${1}.git \ 
-			 &>/dev/null || git remote remove origin; \
-			git remote add origin $SERVER_USER@$SERVER_NAME:/home/$SERVER_USER/git/${1}.git 
+			git remote rm origin &>/dev/null; \
+			git remote add origin $SERVER_USER@$SERVER_NAME:git/${1}.git &>/dev/null
+			echo -e "\nCreating this repo on the server...\n"
+			echo "git init --bare ~/git/${1}.git" | ssh $SERVER_USER@$SERVER_NAME /bin/bash &>/dev/null
 
 			git push origin master
 			cd ..
