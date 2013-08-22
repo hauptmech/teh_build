@@ -55,10 +55,13 @@ Usage:
 
 function check_for_git_extension
 {
-		FNAME=${1: -4}
-		if [ $FNAME = ".git" ]; then
-			echo "ERROR: Re-run the command without the .git extension... I'll add that automatically."
-			exit 1
+		FNAME=${1}
+		if [ ${#FNAME} -gt 4 ]; then 
+			FNAME=${FNAME:0:${#FNAME} - 4}
+			if [ $FNAME = ".git" ]; then
+				echo "ERROR: Re-run the command without the .git extension... I'll add that automatically."
+				exit 1
+			fi
 		fi
 }		
 
@@ -141,7 +144,7 @@ function new_repo
 	else
 		existed=1
 		echo "This repo appears to exist already..."
-		echo "Use $SCRIPTNAME new $1 to get it if you want it."
+		echo "Use $SCRIPTNAME get $1 to get it if you want it."
 		exit
 	fi
 
@@ -239,7 +242,7 @@ case "$1" in
 	;;
 
 	new)	# Create a new repository on the server
-		new_repo
+		new_repo $2
 	;;
 
 	publish) 
