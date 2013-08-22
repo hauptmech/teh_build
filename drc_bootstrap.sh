@@ -9,16 +9,14 @@ sudo echo "$SERVER_IP   $SERVER_NAME" >> /etc/hosts
 
 # 2. Set drc package repo
 
-mkdir -p /usr/local/share/ca-certificates
-sudo scp $SERVER_USER@$SERVER_NAME:/etc/ssl/certs/traveler.crt /usr/local/share/ca-certificates
-sudo update-ca-certificates
-
-sudo sh -c 'echo "deb https://$SERVER_NAME/ubuntu raring_drc/" > /etc/apt/sources.list.d/drc.list'
+echo "deb http://$SERVER_NAME/ubuntu $REPOSITORY/" > ~/.drc.list
+sudo cp ~/.drc.list /etc/apt/sources.list.d/
 sudo apt-get update
 
 
 # 3. apt-get dependencies
 
-
+sudo apt-get install build-essential packaging-dev
+sudo apt-get install teh-build-tools
 
 

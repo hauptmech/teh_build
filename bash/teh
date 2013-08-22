@@ -6,7 +6,11 @@
 
 
 SERVER_USER=drc
+SERVER_IP=90.147.26.149
 SERVER_NAME=debiangpm
+REPOSITORY=raring-drc
+
+SCRIPTNAME=$0
 
 # If user config file exists, use it
 if [ -f ~/.teh ]; then
@@ -35,7 +39,7 @@ Usage:
 
 
 	teh setup                   # Initial setup
-	teh make_keys               # Install the keys for the server
+	teh setup_ssh_keys          # Install the keys for the server
 
 
 	publish:  Publish auto increments the version number, then runs cpack to build
@@ -68,14 +72,15 @@ function abort_if_project_does_not_exist
 function abort_if_project_is_not_active
 {
 	if [ ! -d $1/build ]; then
-		echo "ERROR: The build directory for $1 (and hence $1 is deactivated)!"
+		echo "ERROR: The build directory for $1 does not exist (and hence $1 is deactivated)!"
 		exit
-	fi
-}
+	fi }
 
 # Get ssl certificates, install them, and add package repository to sources.list.d
-function setup_package_repo
+function setup_https_package_repo
 {
+		echo "function setup_https_package_repo failed because it needs to be checked for correctness first!"
+		exit
 		mkdir -p /usr/local/share/ca-certificates
 		sudo scp $SERVER_USER@$SERVER_NAME:/etc/ssl/certs/traveler.crt /usr/local/share/ca-certificates
 		sudo update-ca-certificates
@@ -87,12 +92,21 @@ function setup_package_repo
 			echo "Something went wrong! Ask someone for help..."
 		fi
 }
-
+#Add package repository to sources.list.d
+function setup_http_package_repo
+{
+		echo "deb http://$SERVER_NAME/ubuntu $REPOSITORY/" > ~/.drc.list
+		sudo cp ~/.drc.list /etc/apt/sources.list.d/
+		sudo apt-get update
+		
+		if [ ! $? -eq 0 ]; then
+			echo "Something went wrong! Ask someone for help..."
+		fi
+}
 # Add server to hosts file and .tehrc
 function setup_hosts
 {
-		sudo echo "$1	$2" >> /etc/hosts
-
+		sudo echo "$SERVER_IP	$SERVER_NAME" >> /etc/hosts
 }
 
 #Grabs the shared private key from the server and installs it.
@@ -100,11 +114,16 @@ function setup_hosts
 function setup_ssh_keys
 {
 		mkdir -p ~/.ssh
-		echo "Copying the key from the server... "
-		scp $SERVER_USER@$SERVER_NAME:.ssh/$SERVER_USER_rsa ~/.ssh
+		# Create a filename with some random in case others are using the same username
+		KEYFILE=$LOGNAME$RANDOM
+		# Generate key
+		ssh-keygen -t rsa -N "" -f $KEYFILE
+		echo "Copying the key to the server. Enter your password when requested.... "
+		ssh-copy-id -i $KEYFILE $SERVER_USER@$SERVER_NAME
 		echo "Adding the details to ~/.ssh/config"
+
 		echo "Host $SERVER_NAME" >> ~/.ssh/config
-		echo "IdentityFile ~/.ssh/$SERVER_USER_rsa" >> ~/.ssh/config
+		echo "IdentityFile ~/.ssh/$KEYFILE" >> ~/.ssh/config
 		echo "User $SERVER_USER" >> ~/.ssh/config
 		echo "" >> ~/.ssh/config
 }
@@ -116,14 +135,16 @@ function new_repo
 	echo "mkdir ~/git/${1}.git && git init --bare ~/git/${1}.git" | ssh $SERVER_USER@$SERVER_NAME /bin/bash &>/dev/null
 	if [ $? -eq 0 ]; then
 		existed=0
-		echo "Success!"
+		echo "There is no repo of this name on the server yet."
 	else
 		existed=1
 		echo "This repo appears to exist already..."
+		echo "Use $SCRIPTNAME new $1 to get it if you want it."
+		exit
 	fi
 
 	if [ ! -d ${1} ]; then
-		echo "You need to create the directory locally first."
+		echo "We need to create the directory locally first."
 		select what_to_do in "Use bin (exe) template?" "Use library template?" "Abort!"; do
 			case $REPLY in
 				1) cp -ar DemoBIN $1; rm -rf $1/.git $1/build; break;;
@@ -155,7 +176,7 @@ function new_repo
 	fi
 
 }
-
+############################ Script starts here ##################################
 # If called with no parameters, print usage
 if [ $# -lt 1 ]
 then
@@ -174,17 +195,40 @@ case "$1" in
 		;;
 
 
-	setup) cat <<"==="
-	2. Clone Build_Tools, CMakeModules, DemoLIB, DemoBIN
-	3. Add $(pwd)/Build_Tools/bin to path
-===
+	setup) 
+
+		if [ -d $2 ]; then 
+            read -p "Directory $2 already exists. Are you sure you want me to add DRC specific stuff here? [y/N] " mess_with_this
+            mess_with_this=${mess_with_this:-N}
+            if [ $mess_with_this = "N" ]; then 
+				exit 
+			fi
+		else
+			mkdir -p $2
+		fi
+
+		echo "1. Clone Build_Tools, CMakeModules, DemoLIB, DemoBIN"
+		sudo apt-get install teh-build-tools
+		cd $2
+		git clone $SERVER_USER@$SERVER_NAME:git/Build_Tools.git
+		git clone $SERVER_USER@$SERVER_NAME:git/Demo_Application.git
+		git clone $SERVER_USER@$SERVER_NAME:git/Demo_Library.git
+
 		;;
+
+	setup_ssh_keys)	# Install the ssh keys so you don't have to type them all the time
+		setup_ssh_keys ;;
+
+	setup_repo)	# Install ssl keys and sources.list file
+		setup_http_package_repo ;;
+
+
 
 	get)	# Get an existing repository
 
 		check_for_git_extension $1
 	
-		git clone $SERVER_USER@$SERVER_NAME:/home/$SERVER_USER/git/${2}.git
+		git clone $SERVER_USER@$SERVER_NAME:git/${2}.git
 		
 		if [ ! $? -eq 0 ]; then
 			echo "git clone failed... double check the name (or server ip address hardcoded in the teh script"
@@ -219,20 +263,16 @@ case "$1" in
 
 			else
 				echo "Increment feature version, zero build version"
-				#Perl fu from the interwebs
 				perl -pi.bak -e \
 					's/VERSION_PATCH \"(\d+)\"/ q{VERSION_PATCH "} . (0) . q{"} /ge' \
 					$2/CMakeLists.txt
 				perl -pi.bak -e \
 					's/VERSION_MINOR \"(\d+)\"/ q{VERSION_MINOR "} . (1 + $1) . q{"} /ge' \
 					$2/CMakeLists.txt
-
-
 			fi
 
 		else
 			echo "Increment API version, zero others"	
-				#Perl fu from the interwebs
 				perl -pi.bak -e \
 					's/VERSION_PATCH \"(\d+)\"/ q{VERSION_PATCH "} . (0) . q{"} /ge' \
 					$2/CMakeLists.txt
@@ -242,8 +282,6 @@ case "$1" in
 				perl -pi.bak -e \
 					's/VERSION_MAJOR \"(\d+)\"/ q{VERSION_MAJOR "} . (1 + $1) . q{"} /ge' \
 					$2/CMakeLists.txt
-
-
 		fi
 
 		if [ -d $2/build ]; then 
@@ -262,22 +300,9 @@ case "$1" in
 		
 
 	cat <<"==="
-
-
-
-
 ===
+
 	;;
-	make_ssh_keys)	# Install the ssh keys so you don't have to type them all the time
-		setup_ssh_keys ;;
-
-	setup_repo)	# Install ssl keys and sources.list file
-		setup_package_repo ;;
-
-	set_server) #Add 
-
-		setup_hosts $1 $2 ;;
-
 
 esac
 
