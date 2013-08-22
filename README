@@ -1,4 +1,79 @@
 
+Here is the development files organization (based on cmake) that I came up with. The intent
+was to allow people to easily start working without having to worry about how they can fit
+into the bigger system. 
+
+We assume that all developed modules will be published to the group as binary packages (and
+thus that everyone is at least testing and hopefully using the same Ubuntu distribution).
+
+We also assume that each person will develop 1 or more applications and libraries in parallel
+which in turn depend on any or all of the other modules being developed by the group.
+
+The expected typical use cases are:
+
+	Modify an existing module and re-publish it.
+	Start a new module from a template
+	Start a new module by adding new features and removing unneeded features on a copy of
+		an existing module.
+	Bifurcate a large module into two independent smaller modules (spin off a library, etc)
+
+
+The build system and file organization is very simple. The goal is to make it easy to 
+add or start new application or libraries. It has the following features:
+
+	The "development projects" are all the software we are working on and releasing to 
+		each other. They can either be installed as binary packages ("system installed project")
+		or they can be built from source locally ("locally developed project")
+
+	Each project (library or application) either has it's own subdirectory in the development
+		root directory or if desired, they can organized in groups in subdirectories of
+		the development root ( 1 level deep maximum, see below if you want to do this). 
+
+	Each library project will package the correct *Config.cmake file so other projects
+		can use it when it is installed in the system.
+
+	Each project will automatically use the locally developed projects which have been activated
+		instead of the system installed projects.
+
+	Not all projects are active (some being used as living documentaton). Projects are activated by
+		creating the typical <project_dir>/build folder.
+
+	Each project is independent, with a very simple CMakeLists.txt. The project directory structure 
+		is intentionally simple.
+
+
+Anyone with little or no experience with cmake should be able to quickly modify the template or
+an existing project to fit their needs. The cmake files are very close to the absolute minimal,
+and can support most use cases cleanly as-is. This allows any level of complex cmake scripting 
+to be built on top (though I hope the elegance of the current approach makes this unnecissary).
+
+Limitations: 
+
+	CMake itself is not involved in building hierarchies of libraries and applications
+and therefore if there is anyone working on such a hierarchy, they must deal with dependencies
+in another way.
+
+	For those who end up working on an interdependent hierarchy, the debian packaging dependencies
+embedded in the CMakeLists.txt in concert with a short python script can automate building the 
+full hierarchy in the correct sequence.
+
+	Publishing (packaging and uploading) modules is already automated for a single package,
+and this can easily be extended to do all projects that are active.
+
+	While it is possible to put all projects in a single repository, this forces a level 
+of synchronization between developers. The intention is that each project directory is a
+separate repository (or a separate checkout of a svn subfolder) and that a utility script
+(already partially written) automates new-system-setup, project retrieval and creation,
+and other tasks you might do.
+
+Summary:
+
+	* There is not a master Makefile or CMakeLists.txt to build all libraries and executables.
+	* Each independent library or group of executables (module) has it's own subfolder.
+	* Each module is activated by creating the 'build' directory and building the module. 
+	* Each module will automatically find and use other active modules.
+	
+
 The goal of this project layout is to provide a very low barrier to entry for 
 starting new modules, a very simple module structure, and easy expansion.
 
