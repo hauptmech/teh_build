@@ -55,7 +55,8 @@ Usage:
 
 function check_for_git_extension
 {
-		if [ ${1: -4} = ".git" ]; then
+		FNAME=${1: -4}
+		if [ $FNAME = ".git" ]; then
 			echo "ERROR: Re-run the command without the .git extension... I'll add that automatically."
 			exit 1
 		fi
@@ -148,8 +149,8 @@ function new_repo
 		echo "We need to create the directory locally first."
 		select what_to_do in "Use bin (exe) template?" "Use library template?" "Abort!"; do
 			case $REPLY in
-				1) cp -ar DemoBIN $1; rm -rf $1/.git $1/build; break;;
-				2) cp -ar DemoLIB $1; rm -rf $1/.git $1/build; break;;
+				1) cp -ar Demo_Application $1; rm -rf $1/.git $1/build; break;;
+				2) cp -ar Demo_Library $1; rm -rf $1/.git $1/build; break;;
 				3) echo "Aborting new repo!"; exit ;;
 			esac
 		done
@@ -214,6 +215,7 @@ case "$1" in
 		git clone $SERVER_USER@$SERVER_NAME:git/Build_Tools.git
 		git clone $SERVER_USER@$SERVER_NAME:git/Demo_Application.git
 		git clone $SERVER_USER@$SERVER_NAME:git/Demo_Library.git
+		touch .development_root  # Marker to stop searches for local libraries from bubbling up too much
 
 		;;
 
@@ -237,6 +239,7 @@ case "$1" in
 	;;
 
 	new)	# Create a new repository on the server
+		new_repo
 	;;
 
 	publish) 
