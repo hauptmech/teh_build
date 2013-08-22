@@ -209,6 +209,10 @@ then
 	exit
 fi
 
+if [ $# -gt 1 ]; then
+	TARGET=${2%/}
+	echo "Trimming TARGET to be $TARGET"
+fi
 # Check that git is setup, force setup if not.
 
 git_global name
@@ -228,19 +232,19 @@ case "$1" in
 
 	setup) 
 
-		if [ -d $2 ]; then 
-            read -p "Directory $2 already exists. Are you sure you want me to add DRC specific stuff here? [y/N] " mess_with_this
+		if [ -d ${TARGET} ]; then 
+            read -p "Directory ${TARGET} already exists. Are you sure you want me to add DRC specific stuff here? [y/N] " mess_with_this
             mess_with_this=${mess_with_this:-N}
             if [ $mess_with_this = "N" ]; then 
 				exit 
 			fi
 		else
-			mkdir -p $2
+			mkdir -p ${TARGET}
 		fi
 
 		echo "1. Clone Build_Tools, CMakeModules, DemoLIB, DemoBIN"
 		sudo apt-get install teh-build-tools
-		cd $2
+		cd ${TARGET}
 		git clone $SERVER_USER@$SERVER_NAME:git/Build_Tools.git
 		git clone $SERVER_USER@$SERVER_NAME:git/Demo_Application.git
 		git clone $SERVER_USER@$SERVER_NAME:git/Demo_Library.git
@@ -260,7 +264,8 @@ case "$1" in
 
 		check_for_git_extension $1
 	
-		git clone $SERVER_USER@$SERVER_NAME:git/${2}.git
+		mkdir -p ${TARGET}
+		git clone $SERVER_USER@$SERVER_NAME:git/${TARGET}.git ${TARGET}
 		
 		if [ ! $? -eq 0 ]; then
 			echo "git clone failed... double check the name (or server ip address hardcoded in the teh script"
@@ -268,7 +273,7 @@ case "$1" in
 	;;
 
 	new)	# Create a new repository on the server
-		new_repo $2
+		new_repo ${TARGET}
 	;;
 
 	publish) 
@@ -277,14 +282,14 @@ case "$1" in
 		# Build new packages
 		# Copy *.deb to repository
 		# Rebuild repository index
-		abort_if_project_does_not_exist $2
-		abort_if_project_is_not_active $2
-		rm $2/build/*.deb	#Delete old debs
+		abort_if_project_does_not_exist ${TARGET}
+		abort_if_project_is_not_active ${TARGET}
+		rm ${TARGET}/build/*.deb	#Delete old debs
 
-		read -p "Does $2 have non-backward compatible changes? [y/N] " api_change
+		read -p "Does ${TARGET} have non-backward compatible changes? [y/N] " api_change
 		api_change=${api_change:-N}
 		if [ $api_change = "N" ]; then
-			read -p "Does $2 have new (but backward compatible) features? [y/N] " feature_change
+			read -p "Does ${TARGET} have new (but backward compatible) features? [y/N] " feature_change
 			feature_change=${feature_change:-N}
 
 			if [ $feature_change = "N" ]; then
@@ -292,33 +297,33 @@ case "$1" in
 				#Perl fu from the interwebs
 				perl -pi.bak -e \
 					's/VERSION_PATCH \"(\d+)\"/ q{VERSION_PATCH "} . (1 + $1) . q{"} /ge' \
-					$2/CMakeLists.txt
+					${TARGET}/CMakeLists.txt
 
 			else
 				echo "Increment feature version, zero build version"
 				perl -pi.bak -e \
 					's/VERSION_PATCH \"(\d+)\"/ q{VERSION_PATCH "} . (0) . q{"} /ge' \
-					$2/CMakeLists.txt
+					${TARGET}/CMakeLists.txt
 				perl -pi.bak -e \
 					's/VERSION_MINOR \"(\d+)\"/ q{VERSION_MINOR "} . (1 + $1) . q{"} /ge' \
-					$2/CMakeLists.txt
+					${TARGET}/CMakeLists.txt
 			fi
 
 		else
 			echo "Increment API version, zero others"	
 				perl -pi.bak -e \
 					's/VERSION_PATCH \"(\d+)\"/ q{VERSION_PATCH "} . (0) . q{"} /ge' \
-					$2/CMakeLists.txt
+					${TARGET}/CMakeLists.txt
 				perl -pi.bak -e \
 					's/VERSION_MINOR \"(\d+)\"/ q{VERSION_MINOR "} . (0) . q{"} /ge' \
-					$2/CMakeLists.txt
+					${TARGET}/CMakeLists.txt
 				perl -pi.bak -e \
 					's/VERSION_MAJOR \"(\d+)\"/ q{VERSION_MAJOR "} . (1 + $1) . q{"} /ge' \
-					$2/CMakeLists.txt
+					${TARGET}/CMakeLists.txt
 		fi
 
-		if [ -d $2/build ]; then 
-			cd $2/build; 
+		if [ -d ${TARGET}/build ]; then 
+			cd ${TARGET}/build; 
 		else 
 			echo "Project has not been built yet; do this manually!"; exit 
 		fi
@@ -329,7 +334,7 @@ case "$1" in
 		scp *.deb $SERVER_USER@$SERVER_NAME:/var/ubuntu_repo/raring_drc
 		echo "sh rebuild_package_index; ls -l /var/ubuntu_repo/raring_drc" | ssh $SERVER_USER@$SERVER_NAME /bin/bash
 		cd ../..
-		ls $2/build | grep deb
+		ls ${TARGET}/build | grep deb
 		
 
 	cat <<"==="
