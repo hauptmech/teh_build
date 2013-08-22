@@ -5,12 +5,12 @@ SERVER_USER=drc
 SERVER_NAME=debiangpm
 
 # 1. Set drc server
-sudo sh -c 'echo "$SERVER_IP   $SERVER_NAME" >> /etc/hosts'
+sudo sh -c "echo \"$SERVER_IP   $SERVER_NAME\" >> /etc/hosts"
 
 # 2. Set drc package repo
 
 echo "deb http://$SERVER_NAME/ubuntu $REPOSITORY/" > ~/.drc.list
-sudo cp ~/.drc.list /etc/apt/sources.list.d/
+sudo cp ~/.drc.list /etc/apt/sources.list.d/drc.list
 sudo apt-get update
 
 
