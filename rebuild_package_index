@@ -6,8 +6,9 @@ else
 REPO_DIR=$1
 fi
 
-dpkg-scanpackages $REPO_DIR /dev/null | gzip -9c > $REPO_DIR/Packages.gz
-
+cd $REPO_DIR
+dpkg-scanpackages ./ /dev/null raring_drc/ | gzip -9c > $REPO_DIR/Packages.gz
+cd
 
 
 
