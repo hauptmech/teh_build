@@ -4,49 +4,63 @@
 # 
 # Repo Build Publish helper utility
 
-
-SERVER_USER=drc
-SERVER_IP=90.147.26.149
-SERVER_NAME=debiangpm
-REPOSITORY=raring-drc
-
 SCRIPTNAME=$0
 
-# If user config file exists, use it
-if [ -f ~/.teh ]; then
-	source ~/.tehrc
+#Always operate from .development_root
+if [ -f ./.development_root ]; then
+	pushd . &>/dev/null
+elif [ -f ../.development_root ]; then
+	pushd .. &>/dev/null
+elif [ -f ../../.development_root ]; then
+	pushd ../.. &>/dev/null
+elif [ -f ../../../.development_root ]; then
+	pushd ../../.. &>/dev/null
+elif [ -f ../../../../.development_root ]; then
+	pushd ../../../.. &>/dev/null
+elif [ -f ../../../../../.development_root ]; then
+	pushd ../../../../.. &>/dev/null
+else 
+	echo -e "\nCould not find .development_root! Change to a directory closer to it before running $0\n"
+	exit 1
 fi
+
 
 # If local config file exists, use it
 if [ -f ./.teh ]; then
 	source ./.tehrc
+elif [ -f ~/.teh ]; then
+	source ~/.tehrc
+else
+	echo -e "\n[ERROR] Could not find config file (~/.tehrc or ./.tehrc). It needs the following variables defined...\n"
+	echo -e "SERVER_IP=90.147.26.149;SERVER_USER=drc;SERVER_NAME=debiangpm;REPOSITORY=raring_drc\n"
 fi
 
 function usage 
 {
 	echo $1
+	#sed  -e "s|teh|${1}|"  <<"==="
 	sed  -e "s|teh|${1}|"  <<"==="
 
 Usage:
 
-	teh list                    # List available repositories
+  teh list                    # List available repositories
 
-	teh get <project_name>      # Git clone or git pull
-	teh new <project_name>      # Create a new repository from template
+  teh get <project_name>      # Git clone or git pull
+  teh new <project_name>      # Create a new repository from template
 
-	teh build <project_name>    # Create new <project_name>/build; cmake ..
-	teh publish <project_name>  # Make packages and upload to server
-
-
-	teh setup                   # Initial setup
-	teh setup_ssh_keys          # Install the keys for the server
+  teh build <project_name>    # Create new <project_name>/build; cmake ..
+  teh publish <project_name>  # Make packages and upload to server
 
 
-	publish:  Publish auto increments the version number, then runs cpack to build
+  teh setup                   # Initial setup
+  teh setup_ssh_keys          # Install the keys for the server
+
+
+  publish:  Publish auto increments the version number, then runs cpack to build
 	          the debian packages, the uploads them to the server for others to
 	          use.
 
-	build:    Build creates a clean build of a <project> by removing the 
+  build:    Build creates a clean build of a <project> by removing the 
 	          <project>/build directory, recreating it, and the running first
 	          cmake and then make.
 ===
@@ -58,14 +72,13 @@ function git_global
 git config --global --get user.$1 &>/dev/null
 RET=$?
 while [ ! $RET -eq 0 ]; do
-	echo "The git global user info is not set.."
+	echo -e "\n!!! The git global user info is not set..\n"
     read -p "Enter your $1 for git log messages: " gitname
     git config --global --add user.$1 $gitname
     git config --global --get user.$1 &>/dev/null
     RET=$?
 done
 }
-
 
 function check_for_git_extension
 {
@@ -103,7 +116,7 @@ function setup_https_package_repo
 		sudo scp $SERVER_USER@$SERVER_NAME:/etc/ssl/certs/traveler.crt /usr/local/share/ca-certificates
 		sudo update-ca-certificates
 
-		sudo sh -c 'echo "deb https://$SERVER_NAME/ubuntu raring_drc/" > /etc/apt/sources.list.d/drc.list'
+		sudo sh -c "echo \"deb https://$SERVER_NAME/ubuntu ${REPOSITORY}/\" > /etc/apt/sources.list.d/${REPOSITORY}.list"
 		sudo apt-get update
 		
 		if [ ! $? -eq 0 ]; then
@@ -113,8 +126,8 @@ function setup_https_package_repo
 #Add package repository to sources.list.d
 function setup_http_package_repo
 {
-		echo "deb http://$SERVER_NAME/ubuntu $REPOSITORY/" > ~/.drc.list
-		sudo cp ~/.drc.list /etc/apt/sources.list.d/
+		echo "deb http://$SERVER_NAME/ubuntu ${REPOSITORY}/" > ~/.${REPOSITORY}.list
+		sudo cp ~/.${REPOSITORY}.list /etc/apt/sources.list.d/${REPOSITORY}.list
 		sudo apt-get update
 		
 		if [ ! $? -eq 0 ]; then
@@ -131,25 +144,38 @@ function setup_hosts
 #We should create individual keys instead!!!
 function setup_ssh_keys
 {
+		echo -e "\nWe will now create a RSA key file and teel our server ($SERVER_NAME) abount"
+		echo -e "it so you don't have to type the password everytime you access the server.\n"
 		mkdir -p ~/.ssh
 		cd ~/.ssh
 		# Create a filename with some random in case others are using the same username
 		KEYFILE=$LOGNAME$RANDOM
 		# Generate key
 		ssh-keygen -t rsa -N "" -f $KEYFILE
-		echo "Copying the key to the server. Enter your password when requested.... "
+		echo -e "\nCopying the key to the server. Enter your password when requested.... \n"
 		ssh-copy-id -i $KEYFILE $SERVER_USER@$SERVER_NAME
-		echo "Adding the details to ~/.ssh/config"
+
+		echo -e "\nAdding the login details to ~/.ssh/config\n"
 
 		echo "Host $SERVER_NAME" >> ~/.ssh/config
 		echo "IdentityFile ~/.ssh/$KEYFILE" >> ~/.ssh/config
 		echo "User $SERVER_USER" >> ~/.ssh/config
 		echo "" >> ~/.ssh/config
 }
+
+# apt-get update on a specific repository
+function update_packages
+{
+
+sudo apt-get update -o Dir::Etc::sourcelist="sources.list.d/$1" \
+-o Dir::Etc::sourceparts="-" -o APT::Get::List-Cleanup="0"
+}
+
 function new_repo 
 {
 
 	check_for_git_extension $1
+	
 
 	# We need to make a multi-level directory if necessary.
 	echo -e "\nChecking to see if this repo is on the server...\n"
@@ -169,8 +195,13 @@ function new_repo
 		mkdir -p $1
 		select what_to_do in "Use bin (exe) template?" "Use library template?" "Abort!"; do
 			case $REPLY in
-				1) cp -ar Demo_Application/* $1; rm -rf $1/.git $1/build; break;;
-				2) cp -ar Demo_Library/* $1; rm -rf $1/.git $1/build; break;;
+				1) 
+					cd Demo_Application; git checkout latest; cd ..
+					cp -ar Demo_Application/* $1; rm -rf $1/.git $1/build; break;;
+				2) 
+					cd Demo_Library; git checkout latest; cd .. 
+					#TODO: return to previous state (tag current before chkout. delete tag after done)
+					cp -ar Demo_Library/* $1; rm -rf $1/.git $1/build; break;;
 				3) echo "Aborting new repo!"; exit ;;
 			esac
 		done
@@ -211,7 +242,7 @@ fi
 
 if [ $# -gt 1 ]; then
 	TARGET=${2%/}
-	echo "Trimming TARGET to be $TARGET"
+	echo -e "\nTARGET is $TARGET \n"
 fi
 # Check that git is setup, force setup if not.
 
@@ -263,12 +294,13 @@ case "$1" in
 	get)	# Get an existing repository
 
 		check_for_git_extension $1
+		[ -d ${TARGET} ] && echo -e "\n[INFO] Repository already exists!\n" && exit 0
 	
 		mkdir -p ${TARGET}
 		git clone $SERVER_USER@$SERVER_NAME:git/${TARGET}.git ${TARGET}
 		
 		if [ ! $? -eq 0 ]; then
-			echo "git clone failed... double check the name (or server ip address hardcoded in the teh script"
+			echo -e "\n[ERROR] git clone failed... double check the name (or server ip address hardcoded in the teh script\n"
 		fi
 	;;
 
@@ -331,16 +363,44 @@ case "$1" in
 		make		#Just to be sure 
 		cpack		#Finally do the packaging
 	
-		scp *.deb $SERVER_USER@$SERVER_NAME:/var/ubuntu_repo/raring_drc
-		echo "sh rebuild_package_index; ls -l /var/ubuntu_repo/raring_drc" | ssh $SERVER_USER@$SERVER_NAME /bin/bash
+		scp *.deb $SERVER_USER@$SERVER_NAME:/var/ubuntu_repo/${REPOSITORY}
+		echo "sh rebuild_package_index; ls -l /var/ubuntu_repo/${REPOSITORY}" | ssh $SERVER_USER@$SERVER_NAME /bin/bash
 		cd ../..
 		ls ${TARGET}/build | grep deb
 		
 
 	cat <<"==="
-===
 
-	;;
+===
+;;
+
+
+deactivate)
+	
+	if [ ! -d ${TARGET}/build ]; then
+		echo -e "\n ${TARGET} is either already deactivated or is not a project.\n"
+		exit
+	fi
+	rm -rf ${TARGET}/build
+;;
+
+build) # Build project
+
+	if [ ! -d ${TARGET}/build ]; then
+		mkdir ${TARGET}/build
+		if [ ! $? -eq 0 ]; then 
+			echo -e "\nTried to activate ${TARGET} but it does not appear to be a project director so I'm aborting! \n\n"
+			exit 1
+		fi
+	fi
+	echo -e "Activating project ${TARGET}.... You can do it by hand like this:\n\n"
+	echo -e "> cd ${TARGET}; mkdir build; cd build\n> cmake ..\n> make"
+	cd ${TARGET}/build
+	cmake ..
+	make
+
+;;
 
 esac
 
+popd #Return to the directory we started from
