@@ -52,6 +52,20 @@ Usage:
 ===
 
 }
+# Helper function to make sure git set up correctly
+function git_global 
+{
+git config --global --get user.$1 &>/dev/null
+RET=$?
+while [ ! $RET -eq 0 ]; do
+	echo "The git global user info is not set.."
+    read -p "Enter your $1 for git log messages: " gitname
+    git config --global --add user.$1 $gitname
+    git config --global --get user.$1 &>/dev/null
+    RET=$?
+done
+}
+
 
 function check_for_git_extension
 {
@@ -188,6 +202,12 @@ then
 	usage $0
 	exit
 fi
+
+# Check that git is setup, force setup if not.
+
+git_global name
+git_global email
+
 
 # Check which command was given
 case "$1" in
