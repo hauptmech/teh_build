@@ -104,37 +104,70 @@ sudo apt-get upgrade
 Development Workflow
 ====================
 
-drc help    # Print help info
-drc list	# List all projects on the drc website
-drc reset   # Deletes all prj/build directories to create a known state
+The DRC project has standardized on some software development tools and workflow so that all the software
+modules written for the DRC are easier to integrate. Also, many people have little experience developing
+software on linux, and this standardization will allow everyone to learn the same skills and support each
+other in using those skills. 
 
-drc build <directories>     # Adds a build folder to each directory and builds each based on their debian dependencies
+The basic workflow for developing software is to sit down with either an existing project or to create a
+new one; write, build and test source code until it achieves the desired goal; and then distribute it in binary
+form to those who need to use it.
+
+When working in groups on the same source code we also typically use a version control software to track
+changes and make it easy for everyone to access the current version of the source code. (It is also best
+practice to use version control software when developing alone.
+
+The tools we are standardizing on are: git for version control, cmake for managing the building of source
+code into binaries. 
+
+We also have a standard way to organize all the files in a project and a standard way to organize groups
+of projects. 
+
+To help automate doing all this we have a helper tool called 'teh'.
+
+The typical workflow looks like this:
+
+	When you start writing a new module
+	===================================
+	Create a new project by using teh to copy either an existing project or one of the project templates.
+
+	When you sit down to work each day
+	==================================
+	--->Pull any changes to the software made by others to your computer.
+	|   Write code
+	|   Build the code
+	|   Test the code
+	----Repeat
+
+		Push your changes to the repository so others can access it.
+
+	When you achieve a bug fix or new feature you  want to publish
+	==============================================================
+
+	Use 'teh publish <project>' to make an ubuntu package and put it on the package server. Everyone
+	will using the same Linux Distribution and update daily 
 
 
-1. checkout or create a new repository
-2. mkdir build;cd build;cmake .. on each new repository
-3. Code, make, test
-4. cpack, tag, publish
-
-
-stable
-testing
 
 
 
-drc publish <name>
-	
-	Increment version build number
-	Run cpack
-	Git tag with version number
-	scp .deb to server
 
 
 
-drc setup
-	Create ~/.tehrc
-	Add repository to /etc/apt/sources.list.d/drc.list
-		deb https://exadvr/ubuntu raring drc
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
