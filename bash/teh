@@ -114,6 +114,7 @@ function setup_hosts
 function setup_ssh_keys
 {
 		mkdir -p ~/.ssh
+		cd ~/.ssh
 		# Create a filename with some random in case others are using the same username
 		KEYFILE=$LOGNAME$RANDOM
 		# Generate key
