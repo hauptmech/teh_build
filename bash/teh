@@ -26,9 +26,9 @@ fi
 
 
 # If local config file exists, use it
-if [ -f ./.teh ]; then
+if [ -f ./.tehrc ]; then
 	source ./.tehrc
-elif [ -f ~/.teh ]; then
+elif [ -f ~/.tehrc ]; then
 	source ~/.tehrc
 else
 	echo -e "\n[ERROR] Could not find config file (~/.tehrc or ./.tehrc). It needs the following variables defined...\n"
@@ -45,7 +45,7 @@ Usage:
 
   teh list                    # List available repositories
 
-  teh get <project_name>      # Git clone or git pull
+  teh get <project_name>      # Git clone a project if it's found
   teh new <project_name>      # Create a new repository from template
 
   teh build <project_name>    # Create new <project_name>/build; cmake ..
@@ -54,6 +54,7 @@ Usage:
 
   teh setup                   # Initial setup
   teh setup_ssh_keys          # Install the keys for the server
+  teh update                  # apt-get update the project packages repository.
 
 
   publish:  Publish auto increments the version number, then runs cpack to build
@@ -290,7 +291,8 @@ case "$1" in
 		setup_http_package_repo ;;
 
 
-
+	update) update_packages ${REPOSITORY}.list
+		;;
 	get)	# Get an existing repository
 
 		check_for_git_extension $1
