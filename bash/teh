@@ -85,9 +85,10 @@ function usage
 
 Usage:
 
-  teh list                    # List available repositories
+  teh list                    # List available repositories and subdirectories
+                                on the server
 
-  teh get <project_name>      # Git clone a project if it's found
+  teh get <project_name>      # Git clone a project from the server if it's found
   teh new <project_name>      # Create a new repository from template
 
   teh build <project_name>    # Create new <project_name>/build; cmake ..
@@ -96,6 +97,7 @@ Usage:
 
   teh setup                   # Initial setup
   teh setup_ssh_keys          # Install the keys for the server
+  teh config                  # Dump the current config file
   teh upgrade                 # apt-get update & ugrade the project packages repository.
 
 
@@ -310,7 +312,23 @@ case "$1" in
 		usage $0
 		;;
 
-	list) echo "echo '';ls ~/git | sed -e 's/.git//'" | ssh $SERVER_USER@$SERVER_NAME /bin/bash
+	config) 
+		if [ -f ./.tehrc ]; then
+			cat ./.tehrc
+		elif [ -f ~/.tehrc ]; then
+			cat ~/.tehrc
+		fi
+;;
+
+
+	list) 
+		if [ -z $2 ]; then
+			#echo "echo '';ls ~/git | sed -e 's/.git//'" | ssh $SERVER_USER@$SERVER_NAME /bin/bash
+			
+			echo "echo '';ls ~/git " | ssh $SERVER_USER@$SERVER_NAME /bin/bash
+		else
+			echo "echo '';ls ~/git/${TARGET} " | ssh $SERVER_USER@$SERVER_NAME /bin/bash
+		fi
 		;;
 
 	locate) locate_project
