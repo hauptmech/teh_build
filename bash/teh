@@ -4,28 +4,27 @@
 # 
 # Repo Build Publish helper utility
 
+cat > /dev/null <<"==="
+
+This development automation tool requires that some conventions are followed in order for it's 
+heuristics to function correctly. The following are the conditions...
+
+'build' 'rebuild' and 'publish' use the $PROJECT/build directory to detect if a project is active. Likewise
+the cmake FindPackage scripts check for a $PROJECT/build directory. 
+
+
+
+
+
+
+
+
+===
+
 SCRIPTNAME=$0
+CWD=$(pwd)
 
-#Always operate from .development_root
-if [ -f ./.development_root ]; then
-	pushd . &>/dev/null
-elif [ -f ../.development_root ]; then
-	pushd .. &>/dev/null
-elif [ -f ../../.development_root ]; then
-	pushd ../.. &>/dev/null
-elif [ -f ../../../.development_root ]; then
-	pushd ../../.. &>/dev/null
-elif [ -f ../../../../.development_root ]; then
-	pushd ../../../.. &>/dev/null
-elif [ -f ../../../../../.development_root ]; then
-	pushd ../../../../.. &>/dev/null
-else 
-	echo -e "\nCould not find .development_root! Change to a directory closer to it before running $0\n"
-	exit 1
-fi
-
-
-# If local config file exists, use it
+# If local or user global config file exists, use it, otherwise error.
 if [ -f ./.tehrc ]; then
 	source ./.tehrc
 elif [ -f ~/.tehrc ]; then
@@ -34,6 +33,42 @@ else
 	echo -e "\n[ERROR] Could not find config file (~/.tehrc or ./.tehrc). It needs the following variables defined...\n"
 	echo -e "SERVER_IP=90.147.26.149;SERVER_USER=drc;SERVER_NAME=debiangpm;REPOSITORY=raring_drc\n"
 fi
+
+function check_for_development_root
+{
+	#Always operate from .development_root
+	if [ -f ./.development_root ]; then
+		pushd . &>/dev/null
+	elif [ -f ../.development_root ]; then
+		pushd .. &>/dev/null
+	elif [ -f ../../.development_root ]; then
+		pushd ../.. &>/dev/null
+	elif [ -f ../../../.development_root ]; then
+		pushd ../../.. &>/dev/null
+	elif [ -f ../../../../.development_root ]; then
+		pushd ../../../.. &>/dev/null
+	elif [ -f ../../../../../.development_root ]; then
+		pushd ../../../../.. &>/dev/null
+	else 
+		echo -e "\nCould not find .development_root! Change to a directory closer to it before running $0\n"
+		exit 1
+	fi
+}
+
+function locate_project
+{
+	if [ -z $1 ]; then 
+		while [ ! -f .development_root ] && [ ! -d ./build ] && [ ! -d dev ]; do cd ..; done
+		if [ -d ./build ]; then
+			TARGET=$(pwd)
+			echo -e "\nTARGET is $TARGET"
+		else
+			echo -e "\n[ERROR] You need to specify a target project. (Though I can guess the project if a PROJECT/build directory exists.\n"
+		fi
+	else
+		TARGET=${1%/}
+	fi	
+}
 
 function usage 
 {
@@ -68,17 +103,18 @@ Usage:
 
 }
 # Helper function to make sure git set up correctly
+# Parameter $1 is the git key to check (typically 'name' or 'email')
 function git_global 
 {
-git config --global --get user.$1 &>/dev/null
-RET=$?
-while [ ! $RET -eq 0 ]; do
-	echo -e "\n!!! The git global user info is not set..\n"
-    read -p "Enter your $1 for git log messages: " gitname
-    git config --global --add user.$1 $gitname
-    git config --global --get user.$1 &>/dev/null
-    RET=$?
-done
+	git config --global --get user.$1 &>/dev/null
+	RET=$?
+	while [ ! $RET -eq 0 ]; do
+		echo -e "\n!!! The git global user info is not set..\n"
+		read -p "Enter your $1 for git log messages: " gitvalue
+		git config --global --add user.$1 $gitvalue
+		git config --global --get user.$1 &>/dev/null
+		RET=$?
+	done
 }
 
 function check_for_git_extension
@@ -172,6 +208,14 @@ sudo apt-get update -o Dir::Etc::sourcelist="sources.list.d/$1" \
 -o Dir::Etc::sourceparts="-" -o APT::Get::List-Cleanup="0"
 }
 
+# apt-get update on a specific repository
+function upgrade_packages
+{
+	update_packages $1
+	sudo apt-get upgrade -y --allow-unauthenticated -o Dir::Etc::sourcelist="sources.list.d/$1" \
+	-o Dir::Etc::sourceparts="-" -o APT::Get::List-Cleanup="0"
+}
+
 function new_repo 
 {
 
@@ -192,7 +236,7 @@ function new_repo
 	fi
 
 	if [ ! -d ${1} ]; then
-		echo "We need to create the directory locally first."
+		echo -e "\nWe need to create the directory locally first. Choose a template:\n"
 		mkdir -p $1
 		select what_to_do in "Use bin (exe) template?" "Use library template?" "Abort!"; do
 			case $REPLY in
@@ -234,6 +278,7 @@ function new_repo
 
 }
 ############################ Script starts here ##################################
+
 # If called with no parameters, print usage
 if [ $# -lt 1 ]
 then
@@ -241,15 +286,14 @@ then
 	exit
 fi
 
-if [ $# -gt 1 ]; then
+if [ $# -eq 2 ]; then
 	TARGET=${2%/}
 	echo -e "\nTARGET is $TARGET \n"
 fi
-# Check that git is setup, force setup if not.
 
+# Check that git is setup, force setup if not.
 git_global name
 git_global email
-
 
 # Check which command was given
 case "$1" in
@@ -261,21 +305,23 @@ case "$1" in
 	list) echo "echo '';ls ~/git | sed -e 's/.git//'" | ssh $SERVER_USER@$SERVER_NAME /bin/bash
 		;;
 
-
+	locate) locate_project
+	;;
 	setup) 
 
 		if [ -d ${TARGET} ]; then 
-            read -p "Directory ${TARGET} already exists. Are you sure you want me to add DRC specific stuff here? [y/N] " mess_with_this
+			echo -e "\nDirectory ${TARGET} already exists.\n" 
+            read -p "Are you sure you want me to add DRC specific stuff here? [y/N] " mess_with_this
             mess_with_this=${mess_with_this:-N}
-            if [ $mess_with_this = "N" ]; then 
+            if [ ! $mess_with_this = "Y" ] || [ ! $mess_with_this = "y" ]; then 
 				exit 
 			fi
 		else
 			mkdir -p ${TARGET}
 		fi
 
-		echo "1. Clone Build_Tools, CMakeModules, DemoLIB, DemoBIN"
-		sudo apt-get install teh-build-tools
+		echo -e "Cloning Build_Tools, CMakeModules, Demo_Library, Demo_Application"
+		#sudo apt-get install -y --allow-unauthenticated teh-build-tools #Not sure this is a good idea
 		cd ${TARGET}
 		git clone $SERVER_USER@$SERVER_NAME:git/Build_Tools.git
 		git clone $SERVER_USER@$SERVER_NAME:git/Demo_Application.git
@@ -290,10 +336,12 @@ case "$1" in
 	setup_repo)	# Install ssl keys and sources.list file
 		setup_http_package_repo ;;
 
-
-	update) update_packages ${REPOSITORY}.list
+	upgrade) upgrade_packages ${REPOSITORY}.list
 		;;
+
 	get)	# Get an existing repository
+
+		check_for_development_root
 
 		check_for_git_extension $1
 		[ -d ${TARGET} ] && echo -e "\n[INFO] Repository already exists!\n" && exit 0
@@ -307,10 +355,13 @@ case "$1" in
 	;;
 
 	new)	# Create a new repository on the server
+		check_for_development_root
 		new_repo ${TARGET}
 	;;
 
 	publish) 
+		locate_project ${2}
+		check_for_development_root
 		# Remove old packages
 		# Increment version numbers
 		# Build new packages
@@ -318,12 +369,12 @@ case "$1" in
 		# Rebuild repository index
 		abort_if_project_does_not_exist ${TARGET}
 		abort_if_project_is_not_active ${TARGET}
-		rm ${TARGET}/build/*.deb	#Delete old debs
+		rm -f ${TARGET}/build/*.deb	#Delete old debs
 
-		read -p "Does ${TARGET} have non-backward compatible changes? [y/N] " api_change
+		read -p "Does $(basename ${TARGET}) have non-backward compatible changes? [y/N] " api_change
 		api_change=${api_change:-N}
 		if [ $api_change = "N" ]; then
-			read -p "Does ${TARGET} have new (but backward compatible) features? [y/N] " feature_change
+			read -p "Does $(basename ${TARGET}) have new (but backward compatible) features? [y/N] " feature_change
 			feature_change=${feature_change:-N}
 
 			if [ $feature_change = "N" ]; then
@@ -376,8 +427,9 @@ case "$1" in
 ===
 ;;
 
-
 deactivate)
+		locate_project ${2}
+	check_for_development_root
 	
 	if [ ! -d ${TARGET}/build ]; then
 		echo -e "\n ${TARGET} is either already deactivated or is not a project.\n"
@@ -387,6 +439,8 @@ deactivate)
 ;;
 
 build) # Build project
+		locate_project ${2}
+	check_for_development_root
 
 	if [ ! -d ${TARGET}/build ]; then
 		mkdir ${TARGET}/build
@@ -405,4 +459,4 @@ build) # Build project
 
 esac
 
-popd #Return to the directory we started from
+popd &>/dev/null #Return to the directory we started from
