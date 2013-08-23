@@ -22,7 +22,6 @@ the cmake FindPackage scripts check for a $PROJECT/build directory.
 ===
 
 SCRIPTNAME=$0
-CWD=$(pwd)
 
 # If local or user global config file exists, use it, otherwise error.
 if [ -f ./.tehrc ]; then
@@ -55,13 +54,21 @@ function check_for_development_root
 	fi
 }
 
+#Go either to the project root or to the development root 
+function gohome
+{
+	[ -d ./build ] && cd ..
+	while [ ! -f .development_root ] && [ ! -d ./build ] && [ ! -d dev ]; do cd ..; done
+	echo $(pwd)
+}
+
 function locate_project
 {
 	if [ -z $1 ]; then 
 		while [ ! -f .development_root ] && [ ! -d ./build ] && [ ! -d dev ]; do cd ..; done
 		if [ -d ./build ]; then
 			TARGET=$(pwd)
-			echo -e "\nTARGET is $TARGET"
+			echo -e "$TARGET"
 		else
 			echo -e "\n[ERROR] You need to specify a target project. (Though I can guess the project if a PROJECT/build directory exists.\n"
 		fi
@@ -89,7 +96,7 @@ Usage:
 
   teh setup                   # Initial setup
   teh setup_ssh_keys          # Install the keys for the server
-  teh update                  # apt-get update the project packages repository.
+  teh upgrade                 # apt-get update & ugrade the project packages repository.
 
 
   publish:  Publish auto increments the version number, then runs cpack to build
@@ -123,7 +130,7 @@ function check_for_git_extension
 		if [ ${#FNAME} -gt 4 ]; then 
 			FNAME=${FNAME:0:${#FNAME} - 4}
 			if [ $FNAME = ".git" ]; then
-				echo "ERROR: Re-run the command without the .git extension... I'll add that automatically."
+				echo -e "\n[ERROR] Re-run the command without the .git extension... I'll add that automatically."
 				exit 1
 			fi
 		fi
@@ -132,7 +139,7 @@ function check_for_git_extension
 function abort_if_project_does_not_exist
 {
 	if [ ! -d $1 ]; then
-		echo "ERROR: The directory $1 (and hence the project $1) does not exist!"
+		echo -e "\n[ERROR] The directory $1 (and hence the project $1) does not exist!\n"
 		exit
 	fi
 }
@@ -140,7 +147,7 @@ function abort_if_project_does_not_exist
 function abort_if_project_is_not_active
 {
 	if [ ! -d $1/build ]; then
-		echo "ERROR: The build directory for $1 does not exist (and hence $1 is deactivated)!"
+		echo -e "[ERROR] The build directory for $1 does not exist (and hence $1 is deactivated)!\n"
 		exit
 	fi }
 
@@ -230,8 +237,8 @@ function new_repo
 		echo "There is no repo of this name on the server yet."
 	else
 		existed=1
-		echo "This repo appears to exist already..."
-		echo "Use $SCRIPTNAME get $1 to get it if you want it."
+		echo -e "\nThis repo appears to exist already..."
+		echo -e "Use $SCRIPTNAME get $1 to get it if you want it.\n"
 		exit
 	fi
 
@@ -258,7 +265,7 @@ function new_repo
 		cd ..
 	elif [ -d $1/.git ]; then
 		if [ $existed -eq 0 ]; then
-			echo "There is already a git repo with that name locally."
+			echo -e "\nThere is already a git repo with that name locally."
 			echo -e "      Pushing it up to the new repo on the server!\n"
 			cd $1; 	
 			git remote rm origin &>/dev/null; \
@@ -270,8 +277,8 @@ function new_repo
 			cd ..
 			exit
 		else
-			echo "There is already a git repo with that name locally."
-			echo "      Aborting with no changes made."
+			echo -e "\nThere is already a git repo with that name locally."
+			echo -e "      Aborting with no changes made.\n"
 			exit
 		fi
 	fi
@@ -279,10 +286,8 @@ function new_repo
 }
 ############################ Script starts here ##################################
 
-# If called with no parameters, print usage
-if [ $# -lt 1 ]
-then
-	usage $0
+if [ $# -lt 1 ]; then
+	gohome    #To do, figure out how to make bash leave us here
 	exit
 fi
 
@@ -299,6 +304,9 @@ git_global email
 case "$1" in
 
 	help) # Print out help
+		usage $0
+		;;
+	--help) # Print out help
 		usage $0
 		;;
 
