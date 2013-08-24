@@ -149,17 +149,71 @@ The typical workflow looks like this:
 
 
 
+The Development process.
+========================
+
+The basic idea is to have a small number of minimum impact rules and conventions
+that have a large impact on our productivity and organization. Hopefully this
+leaves room for whatever complexity is needed to get the job done, while 
+creating constraints that guide productivity and save time.
+
+We begin with ideas, then write small proofs of concept and tests to understand
+a problem, then write code to solve a problem, then we polish the code and its
+interface (as a library or as yarp module), then we publish this code for others
+to use, then we fix bugs and add features for others and publish newer versions.
+And after all that we start in on the next problem.
+
+To help automate this process, we use a number of tools. We have the 'teh' tool
+which automates getting existing projects, starting new ones, publishing
+ubuntu packages for others, and updating your system with the packages of others.
+The 'teh' tool does nothing special in itself, just saves a (significant) bit of 
+typing and recall of server parameters.
+
+We use git to make it easier to share and work on code simultaneously, as well as
+track changes to the code over time.  
+
+We use cmake to help with the compilation process. We describe the organization of
+our library or program in a file called CMakeLists.txt and cmake uses that to figure
+out how to compile our code.
+
+We use C++. The C++11 dialect is preferred but any other is acceptable as long 
+as it's specified. C and other languages can be used in special cases.
 
 
+In general our rules and conventions help ease the development process, especially
+where code integration and cooperation are concerned. If you already know these
+tools (C++, cmake, git) then you will be able to use them normally. If you don't
+know these tools then hopefully the rules and convetions will reduce the learning
+curve significantly.
 
 
+The rules and conventions
+=========================
 
+    cmake:
+        Use the libConfig.cmake.in file and and set corresponding variables in 
+		your cmake file when generating the libConfig.cmake file and when using
+        find_package to locate other projects. 
 
+        If you use the provided CMakeLists.txt template then you don't need to
+        worry about understanding the details above. 
 
+    c++:
+        Read, learn, and follow the style guide. It really helps all of us be
+        able to read others code and understand it. It's a short as possible.
 
+    layout:
+        cmake and teh use the file '.development_root' to identify the root
+        directory of all your projects. The main directory of any of your 
+        projects must be no more than 3 directories down. Any project that
+        has a ./build directory is considered active and will be used by 
+        other projects.
 
+        Otherwise there are no restrictions. Only projects using our libConfig
+        and CMakeLists.txt file will be able to find each other automatically
+        but other projects in the same directory structure will not bother them.
 
-
+ 
 
 
 
