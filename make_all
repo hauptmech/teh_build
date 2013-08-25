@@ -1,0 +1,16 @@
+#!/bin/sh
+
+
+#Walk through all the subdirectories and build them in the correct order.
+#Only directories with a ./build directory should be built
+
+#Check each subdirectory for a CMakeLists.txt. 
+    #Add each one to a compile list
+#Grab the dependencies list
+    #If the dependency is in compile list, add it as
+    #an actual dependency
+
+#Add all items with no dependencies to build list
+    #Delete from to build list
+
+

@@ -11,14 +11,6 @@ heuristics to function correctly. The following are the conditions...
 
 'build' 'rebuild' and 'publish' use the $PROJECT/build directory to detect if a project is active. Likewise
 the cmake FindPackage scripts check for a $PROJECT/build directory. 
-
-
-
-
-
-
-
-
 ===
 
 SCRIPTNAME=$0
@@ -55,7 +47,7 @@ function check_for_development_root
 }
 
 #Go either to the project root or to the development root 
-function gohome
+function showhome
 {
 	[ -d ./build ] && cd ..
 	while [ ! -f .development_root ] && [ ! -d ./build ] && [ ! -d dev ]; do cd ..; done
@@ -289,8 +281,16 @@ function new_repo
 ############################ Script starts here ##################################
 
 if [ $# -lt 1 ]; then
-	gohome    #To do, figure out how to make bash leave us here
-	exit
+	echo -e "\n\n== Project root =================================== (teh root)\n"
+	showhome    #To do, figure out how to make bash leave us here
+	echo ""
+
+	echo -e "\n\n== Active Projects ================================ (teh active)\n"
+	find . -maxdepth 4 -type d -name build | sed 's/\/build//'
+	echo -e "\n\n== All Projects =================================== (teh projects)\n"
+	find . -maxdepth 4 -name .git | sed 's/\/\.git//' | while read prj; do
+	[ -f $prj/CMakeLists.txt ] && echo "$prj"
+	done
 fi
 
 if [ $# -eq 2 ]; then
@@ -307,10 +307,19 @@ case "$1" in
 
 	help) # Print out help
 		usage $0
-		;;
+;;
 	--help) # Print out help
 		usage $0
-		;;
+;;
+	root) showhome;;
+	active) 
+		find . -maxdepth 3 -type d -name build | sed 's/\/build//'
+	;;
+	projects)
+    find . -maxdepth 3 -name build | sed 's/\/build//' | while read prj; do
+    [ -f $prj/CMakeLists.txt ] && echo "$prj"
+    done
+	;;
 
 	config) 
 		if [ -f ./.tehrc ]; then
@@ -319,7 +328,26 @@ case "$1" in
 			cat ~/.tehrc
 		fi
 ;;
-
+	git)
+		check_for_development_root
+		find . -name .git | sed 's/\/\.git//' | while read repo; do
+		echo -e "\n$repo\n===================="
+		pushd $repo &>/dev/null
+		case "$2" in
+			st)
+				git st
+			;;
+			br)
+				git br --no-color | grep \* 
+			;;
+			fetch)
+				git fetch 
+			;;
+		esac
+		popd &>/dev/null
+		done
+		popd &>/dev/null
+;;
 
 	list) 
 		if [ -z $2 ]; then
