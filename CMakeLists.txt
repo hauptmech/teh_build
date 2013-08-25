@@ -12,6 +12,7 @@ set( BASH_SCRIPTS_TO_INSTALL
 	bash/teh
 )
 install(PROGRAMS ${BASH_SCRIPTS_TO_INSTALL} DESTINATION bin)
+install(FILES bash/teh_autocomplete DESTINATION /etc/bash_completion.d)
 install(DIRECTORY ${CMAKE_SOURCE_DIR}/cmake DESTINATION share/${PRJ_NAME})
 
 set(CPACK_GENERATOR "DEB")

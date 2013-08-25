@@ -8,16 +8,16 @@ _teh()
 	cur=${COMP_WORDS[COMP_CWORD]}
 	prev=${COMP_WORDS[COMP_CWORD-1]}
 
-	cmds='help activate deactivate projects get new git setup_ssh_keys setup'
+	cmds='help on off active inactive repos get new git setup_ssh_keys setup'
 
 	case "$prev" in
-		deactivate)
-			local all=$(teh active)
+		on)
+			local all=$(teh inactive)
 			COMPREPLY=($(compgen -W "${all}" -- $cur) )
 			return 0
 	;;
-		activate)
-			local all=$(teh projects)
+		off)
+			local all=$(teh active)
 			COMPREPLY=($(compgen -W "${all}" -- $cur) )
 			return 0
 	;;
