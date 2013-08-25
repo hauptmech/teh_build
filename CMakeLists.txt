@@ -1,49 +1,18 @@
-##############################################################################
-#
-# Welcome to our step-by-step cmake template. Follow the numbered instructions
-#   below.
-#
-##############################################################################
+#Author: Traveler Hauptman, 23 Aug 2013
+SET(PRJ_NAME "teh-build-tools") 
 
+PROJECT(${PRJ_NAME})
+cmake_minimum_required(VERSION 2.8)
 
-##############################################################################
-#
-#   1. Set the project name. This will also be the name of your executable or
-#       library.
-#
-##############################################################################
-    SET(PRJ_NAME "teh-build-tools") 
+#Create our special config file
+configure_file(${CMAKE_SOURCE_DIR}/cmake/teh-build-tools-config.cmake 
+		  "${PRJ_NAME}-config.cmake" @ONLY)
 
-
-    PROJECT(${PRJ_NAME})
-    cmake_minimum_required(VERSION 2.8)
-
-
-
-
-##############################################################################
-#
-#   5. Specify which header files need to be installed
-#
-##############################################################################
-	set( BASH_SCRIPTS_TO_INSTALL
-		bash/teh
-	)
-
-
-    #install(TARGETS ${PRJ_NAME} DESTINATION lib)
-    #install(FILES ${HEADERS_TO_INSTALL} DESTINATION include)
-	install(PROGRAMS ${BASH_SCRIPTS_TO_INSTALL} DESTINATION bin)
-
-
-
-
-
-##############################################################################
-#
-#   6. Specify packaging variables
-#
-##############################################################################
+set( BASH_SCRIPTS_TO_INSTALL
+	bash/teh
+)
+install(PROGRAMS ${BASH_SCRIPTS_TO_INSTALL} DESTINATION bin)
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/cmake DESTINATION share/${PRJ_NAME})
 
 set(CPACK_GENERATOR "DEB")
 set(CPACK_PACKAGE_NAME ${PRJ_NAME})
