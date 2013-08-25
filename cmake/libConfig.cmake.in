@@ -1,0 +1,51 @@
+# Traveler Hauptman, 23 Aug 2013
+# Simple template to find local includes and libraries before system ones.
+#
+# The variables LIBRARY_NAME and INCLUDE_PATH_INDICATOR_FILE are used
+# this projects CMakeLists.txt generates xxxConfig.cmake  
+#
+# The variables LOCAL_FIND_PATHS and LOCAL_FIND_LIBRARY_PATHS are set
+# by the calling CMakeLists.txt to where we expect to find the include
+# directory indicator file. They will be set by the CMakeLists.txt 
+# of the project trying to use this file via find_package(xxx)
+
+
+
+### find and set xxx_LIBRARIES ###
+
+
+# Search local paths first
+FIND_LIBRARY(@LIBRARY_NAME@_LIBRARY @LIBRARY_NAME@ 
+    PATHS ${LOCAL_FIND_LIBRARY_PATHS} NO_DEFAULT_PATH)
+
+# Search system paths otherwise
+FIND_LIBRARY(@LIBRARY_NAME@_LIBRARY @LIBRARY_NAME@ 
+	PATHS @CMAKE_INSTALL_PREFIX@/lib)
+
+SET(@LIBRARY_NAME@_LIBRARIES ${@LIBRARY_NAME@_LIBRARY})
+
+
+
+
+
+### find and set  xxx_INCLUDE_DIRS ###
+
+# Search local paths first
+# Our convention is that include files are next to library files so we 
+# search ../include too.
+
+FIND_PATH(@LIBRARY_NAME@_INCLUDE_DIR @INCLUDE_PATH_INDICATOR_FILE@
+    PATHS ${LOCAL_FIND_PATHS} ${LOCAL_FIND_LIBRARY_PATHS}
+	PATH_SUFFIXES "../include"	NO_DEFAULT_PATH)
+
+# Search system paths otherwise
+FIND_PATH(@LIBRARY_NAME@_INCLUDE_DIR @INCLUDE_PATH_INDICATOR_FILE@ 
+	PATHS @CMAKE_INSTALL_PREFIX@/include)
+
+SET(@LIBRARY_NAME@_INCLUDE_DIRS ${@LIBRARY_NAME@_INCLUDE_DIR})
+
+
+
+#SET(@LIBRARY_NAME@_DEFINITIONS ...)
+# @LIBRARY_NAME@_FOUND is set to "1" by FIND_PACKAGE().
+

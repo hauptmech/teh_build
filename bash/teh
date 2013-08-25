@@ -339,8 +339,10 @@ case "$1" in
 			echo -e "\nDirectory ${TARGET} already exists.\n" 
             read -p "Are you sure you want me to add DRC specific stuff here? [y/N] " mess_with_this
             mess_with_this=${mess_with_this:-N}
-            if [ ! $mess_with_this = "Y" ] || [ ! $mess_with_this = "y" ]; then 
+            if [ ! $mess_with_this = "Y" ] && [ ! $mess_with_this = "y" ]; then 
 				exit 
+			else
+				mkdir -p ${TARGET}
 			fi
 		else
 			mkdir -p ${TARGET}
