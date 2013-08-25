@@ -1,17 +1,33 @@
-
+#!/bin/bash
 _teh()
 {
+  local cur prev active cmds
 
+	active=$(teh projects)
+	COMPREPLY=()
+	cur=${COMP_WORDS[COMP_CWORD]}
+	prev=${COMP_WORDS[COMP_CWORD-1]}
 
+	cmds='help activate deactivate projects get new git setup_ssh_keys setup'
 
-
-
-
-
-
-
-
-
+	case "$prev" in
+		deactivate)
+			local all=$(teh active)
+			COMPREPLY=($(compgen -W "${all}" -- $cur) )
+			return 0
+	;;
+		activate)
+			local all=$(teh projects)
+			COMPREPLY=($(compgen -W "${all}" -- $cur) )
+			return 0
+	;;
+		*)
+	;;
+	esac
+	COMPREPLY=($(compgen -W "${cmds}" -- $cur) )
+	return 0
 
 
 }
+
+complete -F _teh teh
