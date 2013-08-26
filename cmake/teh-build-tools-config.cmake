@@ -1,12 +1,19 @@
 
 macro (teh_create_cmake_config LIBRARY_NAME INCLUDE_PATH_INDICATOR_FILE)
 # Create our ${LIBRARY_NAME}Config.cmake file
+
 configure_file(@CMAKE_INSTALL_PREFIX@/share/teh-build-tools/cmake/libConfig.cmake.in 
               "${LIBRARY_NAME}-config.cmake" @ONLY)
 install(FILES "${LIBRARY_NAME}-config.cmake" DESTINATION lib/${LIBRARY_NAME})
 endmacro()
 
-
+macro (teh_add_dependency LIBNAME)
+message("Adding library dependency: ${LIBNAME} ${${LIBNAME}_DIR}")
+if(LIBNAME AND NOT ${${LIBNAME}_DIR} MATCHES "${LIBNAME}-NOTFOUND")
+list(APPEND DEPENDENCY_LIBRARIES "${${LIBNAME}_LIBRARIES}")
+list(APPEND DEPENDENCY_INCLUDE_DIRS "${${LIBNAME}_INCLUDE_DIRS}")
+endif()
+endmacro()
 
 
 macro (teh_find_libraries_in_development)
