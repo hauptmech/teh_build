@@ -8,6 +8,7 @@ _teh()
 	prev=${COMP_WORDS[COMP_CWORD-1]}
 
 	cmds='help on off active inactive repos get new git setup_ssh_keys setup list listall build rebuild publish'
+	gitcmds='status fetch'
 
 	case "$prev" in
 		on)
@@ -18,6 +19,20 @@ _teh()
 		off)
 			local all=$(teh active)
 			COMPREPLY=($(compgen -W "${all}" -- $cur) )
+			return 0
+	;;
+	build)
+			local all=$(teh active)
+			COMPREPLY=($(compgen -W "${all}" -- $cur) )
+			return 0
+	;;
+	publish)
+			local all=$(teh active)
+			COMPREPLY=($(compgen -W "${all}" -- $cur) )
+			return 0
+	;;
+		git)
+			COMPREPLY=($(compgen -W "${gitcmds}" -- $cur) )
 			return 0
 	;;
 		*)
