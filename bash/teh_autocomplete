@@ -7,7 +7,7 @@ _teh()
 	cur=${COMP_WORDS[COMP_CWORD]}
 	prev=${COMP_WORDS[COMP_CWORD-1]}
 
-	cmds='help on off active inactive repos get new git setup_ssh_keys setup'
+	cmds='help on off active inactive repos get new git setup_ssh_keys setup list listall build rebuild publish'
 
 	case "$prev" in
 		on)

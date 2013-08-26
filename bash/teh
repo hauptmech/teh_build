@@ -395,11 +395,17 @@ case "$1" in
 
 	list) 
 		if [ -z $2 ]; then
-			#echo "echo '';ls ~/git | sed -e 's/.git//'" | ssh $SERVER_USER@$SERVER_NAME /bin/bash
-			
-			echo "echo '';ls ~/git " | ssh $SERVER_USER@$SERVER_NAME /bin/bash
+			echo "ls ~/git " | ssh $SERVER_USER@$SERVER_NAME /bin/bash
 		else
-			echo "echo '';ls ~/git/${TARGET} " | ssh $SERVER_USER@$SERVER_NAME /bin/bash
+			echo "ls ~/git/${TARGET} " | ssh $SERVER_USER@$SERVER_NAME /bin/bash
+		fi
+		;;
+
+	listall) 
+		if [ -z $2 ]; then
+			echo "cd ~/git;find . -type d -name \"*.git\" " | ssh $SERVER_USER@$SERVER_NAME /bin/bash
+		else
+			echo "cd ~/git/${TARGET};find . -type d -name \"*.git\"" | ssh $SERVER_USER@$SERVER_NAME /bin/bash
 		fi
 		;;
 
@@ -548,7 +554,6 @@ off)
 	fi
 	rm -rf ${TARGET}/build
 ;;
-
 build) # Build project
 	locate_project ${2}
 	check_for_development_root
@@ -563,6 +568,28 @@ build) # Build project
 	echo -e "Activating project ${TARGET}.... You can do it by hand like this:\n\n"
 	echo -e "> cd ${TARGET}; mkdir build; cd build\n> cmake ..\n> make"
 	cd ${TARGET}/build
+	cmake ..
+	make
+
+;;
+rebuild) # Build project
+	locate_project ${2}
+	check_for_development_root
+
+	if [ ! -d ${TARGET}/build ]; then
+		mkdir ${TARGET}/build
+		if [ ! $? -eq 0 ]; then 
+			echo -e "\nTried to activate ${TARGET} but it does not appear to be a project director so I'm aborting! \n\n"
+			exit 1
+		fi
+	fi
+	echo -e "Activating project ${TARGET}.... You can do it by hand like this:\n\n"
+	echo -e "> cd ${TARGET}; rm -rf build; mkdir build; cd build\n> cmake ..\n> make\n"
+	
+	cd ${TARGET}
+	rm -rf build
+	mkdir build
+	cd build
 	cmake ..
 	make
 
