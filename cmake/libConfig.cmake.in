@@ -17,7 +17,6 @@
 # Search local paths first
 FIND_LIBRARY(@LIBRARY_NAME@_LIBRARY @LIBRARY_NAME@ 
     PATHS ${LOCAL_FIND_LIBRARY_PATHS} NO_DEFAULT_PATH)
-
 # Search system paths otherwise
 FIND_LIBRARY(@LIBRARY_NAME@_LIBRARY @LIBRARY_NAME@ 
 	PATHS @CMAKE_INSTALL_PREFIX@/lib)
@@ -25,7 +24,22 @@ FIND_LIBRARY(@LIBRARY_NAME@_LIBRARY @LIBRARY_NAME@
 SET(@LIBRARY_NAME@_LIBRARIES ${@LIBRARY_NAME@_LIBRARY})
 list(APPEND @LIBRARY_NAME@_LIBRARIES "@DEPENDENCY_LIBRARIES@")
 
+list(APPEND TEH_MY_LIBRARIES "@TEH_MY_LIBRARIES@")
+FOREACH(res IN LISTS TEH_MY_LIBRARIES) 
+	# Search local paths first
+	FIND_LIBRARY(${res}_LIBRARY "${res}"
+		PATHS ${LOCAL_FIND_LIBRARY_PATHS} NO_DEFAULT_PATH)
+	# Search system paths otherwise
+	FIND_LIBRARY(${res}_LIBRARY "${res}"
+		PATHS @CMAKE_INSTALL_PREFIX@/lib)
 
+	list(APPEND @LIBRARY_NAME@_LIBRARIES ${${res}_LIBRARY})
+#	if (@LIBRARY_NAME@_LIBRARY2)
+#		message("...${res} ${@LIBRARY_NAME@_LIBRARY2}")
+#	else()
+#		message("...${res} not found")
+#	endif()
+endforeach()
 ### find and set  xxx_INCLUDE_DIRS ###
 
 # Search local paths first
