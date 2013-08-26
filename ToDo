@@ -5,6 +5,7 @@ _ teh new should remind user of the next things to do.
 
 teh get <dirname> # Checkout all git repos in that directory on the server
 teh make_list <glob> [<CMakeLists.txt] #Add a sources list to CMakeLists.txt
+teh list_all # List all the avaiable packages in all the folders 
 
 Features:
 
