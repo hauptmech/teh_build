@@ -1,2 +1,20 @@
 
+
+_ teh new should remind user of the next things to do.
+
+
 teh get <dirname> # Checkout all git repos in that directory on the server
+teh make_list <glob> [<CMakeLists.txt] #Add a sources list to CMakeLists.txt
+
+Features:
+
+	scan for dependencies
+		build them
+		package them
+		activate all and build them
+
+
+	Compare source and debian packages
+	
+
+
