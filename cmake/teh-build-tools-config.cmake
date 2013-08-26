@@ -1,18 +1,18 @@
 #macro (
-macro (teh_create_config_file MY_LIBRARY_NAME INC_PATH_INDICATOR_FILE INC_PATH_SUFFIX)
+macro (teh_create_config_file MY_LIBRARY_NAME INC_PATH_INDICATOR_FILE )
 	# Create our ${LIBRARY_NAME}Config.cmake file
 	set(INCLUDE_PATH_INDICATOR_FILE ${INC_PATH_INDICATOR_FILE})
 	set(TEH_LIBRARY_NAME ${MY_LIBRARY_NAME})
-	set(TEH_INC_SUFFIX ${INC_PATH_SUFFIX})
-	if(NOT LIBRARY_NAME)
+	set(TEH_INC_SUFFIX ${ARGV2})
+	if(NOT TEH_LIBRARY_NAME)
 		message(FATAL_ERROR " the variable $LIBRARY_NAME must be set to the name of this library! ")
 	endif()
 	if(NOT INCLUDE_PATH_INDICATOR_FILE)
 		message(FATAL_ERROR " the variable $INCLUDE_PATH_INDICATOR_FILE must be set to an include file that can be used in searches to identify the location of this package when installed! ")
 	endif()
 	configure_file(@CMAKE_INSTALL_PREFIX@/share/teh-build-tools/cmake/libConfig.cmake.in 
-				  "${LIBRARY_NAME}Config.cmake" @ONLY)
-	install(FILES "${LIBRARY_NAME}Config.cmake" DESTINATION lib/${LIBRARY_NAME})
+				  "${TEH_LIBRARY_NAME}Config.cmake" @ONLY)
+	install(FILES "${TEH_LIBRARY_NAME}Config.cmake" DESTINATION lib/${TEH_LIBRARY_NAME})
 endmacro()
 
 macro (teh_target LIBNAME)
@@ -20,7 +20,7 @@ macro (teh_target LIBNAME)
 		message("Adding library: ${LIBNAME}")
 		LIST(APPEND TEH_EXPORTED_LIBRARIES ${LIBNAME})
 	else()
-		message(FATAL_ERROR "${LIBNAME} is not an active target. Perhaps you need to create it with 'add_libary' or 'add_executable'?"
+		message(FATAL_ERROR "${LIBNAME} is not an active target. Perhaps you need to create it with 'add_libary' or 'add_executable'?")
 	endif()
 endmacro()
 
