@@ -3,7 +3,9 @@
 # Traveler Hauptman, Istituto Italiano di Tecnologia, 20 Aug 2013
 # 
 # Repo Build Publish helper utility
-function check_for_development_root
+
+# Look for .development_root, push current dir and change to it if we find it.
+function goto_development_root
 {
 	#Always operate from .development_root
 	if [ -f ./.development_root ]; then
@@ -31,6 +33,7 @@ function showhome
 	while [ ! -f .development_root ] && [ ! -d ./build ] && [ ! -d dev ]; do cd ..; done
 	echo $(pwd)
 }
+
 function showroot
 {
 	[ -d ./build ] && cd ..
@@ -88,16 +91,19 @@ Usage:
 
 }
 
+# Guide user through making a config file in development root
 function teh_config
 {
-	check_for_development_root
+	goto_development_root
 	read -p "Enter the server address: " MY_SERVER_ADDR
 	read -p "Enter the user name: " MY_SERVER_USER 
 	read -p "Enter the repository: " MY_REPOSITORY
+	read -p "Enter the git dir on the server: " MY_GIT_DIR
 
 	echo -e "SERVER_NAME=${MY_SERVER_ADDR}" > ./.tehrc
 	echo -e "SERVER_USER=${MY_SERVER_USER}" > ./.tehrc
 	echo -e "REPOSITORY=${MY_REPOSITORY}" > ./.tehrc
+	echo -e "GIT_DIR=${MY_GIT_DIR}" > ./.tehrc
 
 }
 # Helper function to make sure git set up correctly
@@ -218,7 +224,7 @@ function new_repo
 
 	# We need to make a multi-level directory if necessary.
 	echo -e "\nChecking to see if this repo is on the server...\n"
-	echo "[ ! -d ~/git/${1}.git ] && mkdir -p ~/git/${1}.git" | ssh $SERVER_USER@$SERVER_NAME /bin/bash &>/dev/null
+	echo "[ ! -d ${GIT_DIR}/${1}.git ] && mkdir -p ${GIT_DIR}/${1}.git" | ssh $SERVER_USER@$SERVER_NAME /bin/bash &>/dev/null
 	if [ $? -eq 0 ]; then
 		existed=0
 		echo "There is no repo of this name on the server yet."
@@ -247,7 +253,7 @@ function new_repo
 		cd $1; git init; git add .; git commit -m 'First!';
 		git remote add origin $SERVER_USER@$SERVER_NAME:/home/$SERVER_USER/git/${1}.git
 		echo -e "\nCreating this repo on the server...\n"
-		echo "git init --bare ~/git/${1}.git" | ssh $SERVER_USER@$SERVER_NAME /bin/bash &>/dev/null
+		echo "git init --bare ${GIT_DIR}/${1}.git" | ssh $SERVER_USER@$SERVER_NAME /bin/bash &>/dev/null
 		git push origin master
 		cd ..
 	elif [ -d $1/.git ]; then
@@ -258,7 +264,7 @@ function new_repo
 			git remote rm origin &>/dev/null; \
 			git remote add origin $SERVER_USER@$SERVER_NAME:git/${1}.git &>/dev/null
 			echo -e "\nCreating this repo on the server...\n"
-			echo "git init --bare ~/git/${1}.git" | ssh $SERVER_USER@$SERVER_NAME /bin/bash &>/dev/null
+			echo "git init --bare ${GIT_DIR}/${1}.git" | ssh $SERVER_USER@$SERVER_NAME /bin/bash &>/dev/null
 
 			git push origin master
 			cd ..
@@ -275,7 +281,7 @@ function new_repo
 function get_repos
 {
 	local git_repos svn_repos
-	check_for_development_root
+	goto_development_root
 	git_repos=$(find . -maxdepth 4 -name .git | sed 's/\/\.git//' |  sed 's/\.\///'| while read prj; do
 	[ -f $prj/CMakeLists.txt ] && echo "$prj"
 	done)  
@@ -288,7 +294,7 @@ function get_repos
 }
 function get_active
 {
-	check_for_development_root
+	goto_development_root
 	echo "$(find . -maxdepth 4 -type d -name build | sed 's/\/build//' | sed 's/\.\///' | sort)"
 	popd &>/dev/null
 }

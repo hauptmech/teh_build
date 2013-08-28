@@ -28,10 +28,14 @@ else
 cat <<"==="
 SERVER_USER=drc
 SERVER_NAME=debiangpm
+GIT_DIR="/home/drc/git"
 REPOSITORY=raring_drc
 ===
 fi
 
+if [ -z $GIT_DIR ]; then
+	GIT_DIR=~/git
+fi
 
 if [ $# -lt 1 ]; then
 	echo -e "\n\n== Project root =================================== (teh root)\n"
@@ -81,7 +85,7 @@ case "$1" in
 		fi
 ;;
 	git)
-		check_for_development_root
+		goto_development_root
 		find . -name .git | sed 's/\/\.git//' | while read repo; do
 		echo -e "\n$repo\n===================="
 		pushd $repo &>/dev/null
@@ -103,17 +107,17 @@ case "$1" in
 
 	list) 
 		if [ -z $2 ]; then
-			echo "ls ~/git " | ssh $SERVER_USER@$SERVER_NAME /bin/bash
+			echo "ls ${GIT_DIR} " | ssh $SERVER_USER@$SERVER_NAME /bin/bash
 		else
-			echo "ls ~/git/${TARGET} " | ssh $SERVER_USER@$SERVER_NAME /bin/bash
+			echo "ls ${GIT_DIR}/${TARGET} " | ssh $SERVER_USER@$SERVER_NAME /bin/bash
 		fi
 		;;
 
 	listall) 
 		if [ -z $2 ]; then
-			echo "cd ~/git;find . -type d -name \"*.git\" " | ssh $SERVER_USER@$SERVER_NAME /bin/bash
+			echo "cd ${GIT_DIR};find . -type d -name \"*.git\" " | ssh $SERVER_USER@$SERVER_NAME /bin/bash
 		else
-			echo "cd ~/git/${TARGET};find . -type d -name \"*.git\"" | ssh $SERVER_USER@$SERVER_NAME /bin/bash
+			echo "cd ${GIT_DIR}/${TARGET};find . -type d -name \"*.git\"" | ssh $SERVER_USER@$SERVER_NAME /bin/bash
 		fi
 		;;
 
@@ -156,7 +160,7 @@ case "$1" in
 
 	get)	# Get an existing repository
 
-		check_for_development_root
+		goto_development_root
 
 		check_for_git_extension $1
 		[ -d ${TARGET} ] && echo -e "\n[INFO] Repository already exists!\n" && exit 0
@@ -170,13 +174,13 @@ case "$1" in
 	;;
 
 	new)	# Create a new repository on the server
-		check_for_development_root
+		goto_development_root
 		new_repo ${TARGET}
 	;;
 
 	publish) 
 		locate_project ${2}
-		check_for_development_root
+		goto_development_root
 		# Remove old packages
 		# Increment version numbers
 		# Build new packages
@@ -243,7 +247,7 @@ case "$1" in
 ;;
 on)
 	locate_project ${2}
-	check_for_development_root
+	goto_development_root
 
 	
 	if [ -d ${TARGET}/build ]; then
@@ -254,7 +258,7 @@ on)
 ;;
 off)
 	locate_project ${2}
-	check_for_development_root
+	goto_development_root
 	
 	if [ ! -d ${TARGET}/build ]; then
 		echo -e "\n ${TARGET} is either already deactivated or is not a project.\n"
@@ -264,7 +268,7 @@ off)
 ;;
 build) # Build project
 	locate_project ${2}
-	check_for_development_root
+	goto_development_root
 
 	if [ ! -d ${TARGET}/build ]; then
 		mkdir ${TARGET}/build
@@ -282,7 +286,7 @@ build) # Build project
 ;;
 rebuild) # Build project
 	locate_project ${2}
-	check_for_development_root
+	goto_development_root
 
 	if [ ! -d ${TARGET}/build ]; then
 		mkdir ${TARGET}/build

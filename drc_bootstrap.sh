@@ -14,6 +14,7 @@ SERVER_IP=90.147.26.149
 SERVER_USER=drc
 SERVER_NAME=debiangpm
 REPOSITORY=raring_drc
+GIT_DIR=~/git
 ===
 
 . ~/.tehrc 
