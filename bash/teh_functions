@@ -1,0 +1,300 @@
+#!/bin/bash
+#
+# Traveler Hauptman, Istituto Italiano di Tecnologia, 20 Aug 2013
+# 
+# Repo Build Publish helper utility
+function check_for_development_root
+{
+	#Always operate from .development_root
+	if [ -f ./.development_root ]; then
+		pushd . &>/dev/null
+	elif [ -f ../.development_root ]; then
+		pushd .. &>/dev/null
+	elif [ -f ../../.development_root ]; then
+		pushd ../.. &>/dev/null
+	elif [ -f ../../../.development_root ]; then
+		pushd ../../.. &>/dev/null
+	elif [ -f ../../../../.development_root ]; then
+		pushd ../../../.. &>/dev/null
+	elif [ -f ../../../../../.development_root ]; then
+		pushd ../../../../.. &>/dev/null
+	else 
+		echo -e "\nCould not find .development_root! Change to a directory closer to it before running $0\n"
+		exit 1
+	fi
+}
+
+#Go either to the project root or to the development root 
+function showhome
+{
+	[ -d ./build ] && cd ..
+	while [ ! -f .development_root ] && [ ! -d ./build ] && [ ! -d dev ]; do cd ..; done
+	echo $(pwd)
+}
+function showroot
+{
+	[ -d ./build ] && cd ..
+	while [ ! -f .development_root ] &&  [ ! -d dev ]; do cd ..; done
+	[ -f .development_root ] && echo $(pwd)
+}
+
+function locate_project
+{
+	if [ -z $1 ]; then 
+		while [ ! -f .development_root ] && [ ! -d ./build ] && [ ! -d dev ]; do cd ..; done
+		if [ -d ./build ]; then
+			TARGET=$(pwd)
+			echo -e "$TARGET"
+		else
+			echo -e "\n[ERROR] You need to specify a target project. (Though I can guess the project if a PROJECT/build directory exists.\n"
+		fi
+	else
+		TARGET=${1%/}
+	fi	
+}
+
+function usage 
+{
+	echo $1
+	#sed  -e "s|teh|${1}|"  <<"==="
+	sed  -e "s|teh|${1}|"  <<"==="
+
+Usage:
+
+  teh list                    # List available repositories and subdirectories
+                                on the server
+
+  teh get <project_name>      # Git clone a project from the server if it's found
+  teh new <project_name>      # Create a new repository from template
+
+  teh build <project_name>    # Create new <project_name>/build; cmake ..
+  teh publish <project_name>  # Make packages and upload to server
+
+
+  teh setup                   # Initial setup
+  teh setup_ssh_keys          # Install the keys for the server
+  teh config                  # Dump the current config file
+  teh upgrade                 # apt-get update & ugrade the project packages repository.
+
+
+  publish:  Publish auto increments the version number, then runs cpack to build
+	          the debian packages, the uploads them to the server for others to
+	          use.
+
+  build:    Build creates a clean build of a <project> by removing the 
+	          <project>/build directory, recreating it, and the running first
+	          cmake and then make.
+===
+
+}
+
+function teh_config
+{
+	check_for_development_root
+	read -p "Enter the server address: " MY_SERVER_ADDR
+	read -p "Enter the user name: " MY_SERVER_USER 
+	read -p "Enter the repository: " MY_REPOSITORY
+
+	echo -e "SERVER_NAME=${MY_SERVER_ADDR}" > ./.tehrc
+	echo -e "SERVER_USER=${MY_SERVER_USER}" > ./.tehrc
+	echo -e "REPOSITORY=${MY_REPOSITORY}" > ./.tehrc
+
+}
+# Helper function to make sure git set up correctly
+# Parameter $1 is the git key to check (typically 'name' or 'email')
+function git_global 
+{
+	git config --global --get user.$1 &>/dev/null
+	RET=$?
+	while [ ! $RET -eq 0 ]; do
+		echo -e "\n!!! The git global user info is not set..\n"
+		read -p "Enter your $1 for git log messages: " gitvalue
+		git config --global --add user.$1 $gitvalue
+		git config --global --get user.$1 &>/dev/null
+		RET=$?
+	done
+}
+
+function check_for_git_extension
+{
+		FNAME=${1}
+		if [ ${#FNAME} -gt 4 ]; then 
+			FNAME=${FNAME:0:${#FNAME} - 4}
+			if [ $FNAME = ".git" ]; then
+				echo -e "\n[ERROR] Re-run the command without the .git extension... I'll add that automatically."
+				exit 1
+			fi
+		fi
+}		
+
+function abort_if_project_does_not_exist
+{
+	if [ ! -d $1 ]; then
+		echo -e "\n[ERROR] The directory $1 (and hence the project $1) does not exist!\n"
+		exit
+	fi
+}
+
+function abort_if_project_is_not_active
+{
+	if [ ! -d $1/build ]; then
+		echo -e "[ERROR] The build directory for $1 does not exist (and hence $1 is deactivated)!\n"
+		exit
+	fi }
+
+# Get ssl certificates, install them, and add package repository to sources.list.d
+function setup_https_package_repo
+{
+		echo "function setup_https_package_repo failed because it needs to be checked for correctness first!"
+		exit
+		mkdir -p /usr/local/share/ca-certificates
+		sudo scp $SERVER_USER@$SERVER_NAME:/etc/ssl/certs/traveler.crt /usr/local/share/ca-certificates
+		sudo update-ca-certificates
+
+		sudo sh -c "echo \"deb https://$SERVER_NAME/ubuntu ${REPOSITORY}/\" > /etc/apt/sources.list.d/${REPOSITORY}.list"
+		sudo apt-get update
+		
+		if [ ! $? -eq 0 ]; then
+			echo "Something went wrong! Ask someone for help..."
+		fi
+}
+#Add package repository to sources.list.d
+function setup_http_package_repo
+{
+		echo "deb http://$SERVER_NAME/ubuntu ${REPOSITORY}/" > ~/.${REPOSITORY}.list
+		sudo cp ~/.${REPOSITORY}.list /etc/apt/sources.list.d/${REPOSITORY}.list
+		sudo apt-get update
+		
+		if [ ! $? -eq 0 ]; then
+			echo "Something went wrong! Ask someone for help..."
+		fi
+}
+
+
+#Grabs the shared private key from the server and installs it.
+#We should create individual keys instead!!!
+function setup_ssh_keys
+{
+		echo -e "\nWe will now create a RSA key file and teel our server ($SERVER_NAME) abount"
+		echo -e "it so you don't have to type the password everytime you access the server.\n"
+		mkdir -p ~/.ssh
+		cd ~/.ssh
+		# Create a filename with some random in case others are using the same username
+		KEYFILE=$LOGNAME$RANDOM
+		# Generate key
+		ssh-keygen -t rsa -N "" -f $KEYFILE
+		echo -e "\nCopying the key to the server. Enter your password when requested.... \n"
+		ssh-copy-id -i $KEYFILE $SERVER_USER@$SERVER_NAME
+
+		echo -e "\nAdding the login details to ~/.ssh/config\n"
+
+		echo "Host $SERVER_NAME" >> ~/.ssh/config
+		echo "IdentityFile ~/.ssh/$KEYFILE" >> ~/.ssh/config
+		echo "User $SERVER_USER" >> ~/.ssh/config
+		echo "" >> ~/.ssh/config
+}
+
+# apt-get update on a specific repository
+function update_packages
+{
+
+sudo apt-get update -o Dir::Etc::sourcelist="sources.list.d/$1" \
+-o Dir::Etc::sourceparts="-" -o APT::Get::List-Cleanup="0"
+}
+
+# apt-get update on a specific repository
+function upgrade_packages
+{
+	update_packages $1
+	sudo apt-get upgrade -y --allow-unauthenticated -o Dir::Etc::sourcelist="sources.list.d/$1" \
+	-o Dir::Etc::sourceparts="-" -o APT::Get::List-Cleanup="0"
+}
+
+function new_repo 
+{
+
+	check_for_git_extension $1
+	
+
+	# We need to make a multi-level directory if necessary.
+	echo -e "\nChecking to see if this repo is on the server...\n"
+	echo "[ ! -d ~/git/${1}.git ] && mkdir -p ~/git/${1}.git" | ssh $SERVER_USER@$SERVER_NAME /bin/bash &>/dev/null
+	if [ $? -eq 0 ]; then
+		existed=0
+		echo "There is no repo of this name on the server yet."
+	else
+		existed=1
+		echo -e "\nThis repo appears to exist already..."
+		echo -e "Use $SCRIPTNAME get $1 to get it if you want it.\n"
+		exit
+	fi
+
+	if [ ! -d ${1} ]; then
+		echo -e "\nWe need to create the directory locally first. Choose a template:\n"
+		mkdir -p $1
+		select what_to_do in "Use bin (exe) template?" "Use library template?" "Abort!"; do
+			case $REPLY in
+				1) 
+					cd Demo_Application; git checkout latest; cd ..
+					cp -ar Demo_Application/* $1; rm -rf $1/.git $1/build; break;;
+				2) 
+					cd Demo_Library; git checkout latest; cd .. 
+					#TODO: return to previous state (tag current before chkout. delete tag after done)
+					cp -ar Demo_Library/* $1; rm -rf $1/.git $1/build; break;;
+				3) echo "Aborting new repo!"; exit ;;
+			esac
+		done
+		cd $1; git init; git add .; git commit -m 'First!';
+		git remote add origin $SERVER_USER@$SERVER_NAME:/home/$SERVER_USER/git/${1}.git
+		echo -e "\nCreating this repo on the server...\n"
+		echo "git init --bare ~/git/${1}.git" | ssh $SERVER_USER@$SERVER_NAME /bin/bash &>/dev/null
+		git push origin master
+		cd ..
+	elif [ -d $1/.git ]; then
+		if [ $existed -eq 0 ]; then
+			echo -e "\nThere is already a git repo with that name locally."
+			echo -e "      Pushing it up to the new repo on the server!\n"
+			cd $1; 	
+			git remote rm origin &>/dev/null; \
+			git remote add origin $SERVER_USER@$SERVER_NAME:git/${1}.git &>/dev/null
+			echo -e "\nCreating this repo on the server...\n"
+			echo "git init --bare ~/git/${1}.git" | ssh $SERVER_USER@$SERVER_NAME /bin/bash &>/dev/null
+
+			git push origin master
+			cd ..
+			exit
+		else
+			echo -e "\nThere is already a git repo with that name locally."
+			echo -e "      Aborting with no changes made.\n"
+			exit
+		fi
+	fi
+
+}
+
+function get_repos
+{
+	local git_repos svn_repos
+	check_for_development_root
+	git_repos=$(find . -maxdepth 4 -name .git | sed 's/\/\.git//' |  sed 's/\.\///'| while read prj; do
+	[ -f $prj/CMakeLists.txt ] && echo "$prj"
+	done)  
+	svn_repos=$(find . -maxdepth 4 -name .svn | sed 's/\/\.svn//' | sed 's/\.\///'| while read prj; do
+	[ -f $prj/CMakeLists.txt ] && echo "$prj"
+	done )
+	echo "${git_repos} ${svn_repos}"|sort
+	popd &>/dev/null
+
+}
+function get_active
+{
+	check_for_development_root
+	echo "$(find . -maxdepth 4 -type d -name build | sed 's/\/build//' | sed 's/\.\///' | sort)"
+	popd &>/dev/null
+}
+
+function get_inactive
+{
+	comm -13 <(get_active) <(get_repos)
+}
+
