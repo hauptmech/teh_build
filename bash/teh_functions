@@ -73,6 +73,8 @@ Usage:
   teh build <project_name>    # Create new <project_name>/build; cmake ..
   teh publish <project_name>  # Make packages and upload to server
 
+  teh git [status|branch|fetch] #git operations on all repositories
+
 
   teh setup                   # Initial setup
   teh setup_ssh_keys          # Install the keys for the server
@@ -241,12 +243,20 @@ function new_repo
 		select what_to_do in "Use bin (exe) template?" "Use library template?" "Abort!"; do
 			case $REPLY in
 				1) 
-					cd Demo_Application; git checkout latest; cd ..
-					cp -ar Demo_Application/* $1; rm -rf $1/.git $1/build; break;;
+                    pushd utils/Demo_Application
+                    git checkout latest
+                    popd
+                    cp -ar utils/Demo_Application/* $1; rm -rf $1/.git $1/build; break;;
+ 
 				2) 
 					cd Demo_Library; git checkout latest; cd .. 
+                    pushd utils/Demo_Library
+                    git checkout latest
+                    popd
+
 					#TODO: return to previous state (tag current before chkout. delete tag after done)
-					cp -ar Demo_Library/* $1; rm -rf $1/.git $1/build; break;;
+                    cp -ar utils/Demo_Library/* $1; rm -rf $1/.git $1/build; break;;
+
 				3) echo "Aborting new repo!"; exit ;;
 			esac
 		done

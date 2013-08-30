@@ -90,10 +90,10 @@ case "$1" in
 		echo -e "\n$repo\n===================="
 		pushd $repo &>/dev/null
 		case "$2" in
-			st)
+			status)
 				git status -s 
 			;;
-			br)
+			branch)
 				git br --no-color | grep \* 
 			;;
 			fetch)
@@ -141,11 +141,11 @@ case "$1" in
 		echo -e "Cloning Build_Tools, CMakeModules, Demo_Library, Demo_Application"
 		#sudo apt-get install -y --allow-unauthenticated teh-build-tools #Not sure this is a good idea
 		cd ${TARGET}
+		touch .development_root  # Marker to stop searches for local libraries from bubbling up too much
 		mkdir -p utils; cd utils
 		git clone $SERVER_USER@$SERVER_NAME:git/utils/Build_Tools.git
 		git clone $SERVER_USER@$SERVER_NAME:git/utils/Demo_Application.git
 		git clone $SERVER_USER@$SERVER_NAME:git/utils/Demo_Library.git
-		touch .development_root  # Marker to stop searches for local libraries from bubbling up too much
 
 		;;
 
