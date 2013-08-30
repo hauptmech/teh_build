@@ -33,6 +33,7 @@ REPOSITORY=raring_drc
 ===
 fi
 
+# Legacy config files don't have GIT_DIR
 if [ -z $GIT_DIR ]; then
 	GIT_DIR=~/git
 fi
@@ -41,7 +42,6 @@ if [ $# -lt 1 ]; then
 	echo -e "\n\n== Project root =================================== (teh root)\n"
 	showroot    #To do, figure out how to make bash leave us here
 	echo ""
-
 	echo -e "\n\n== Active Projects ================================ (teh active)\n"
 	echo "$(get_active)"
 	echo -e "\n\n== Inactive Projects ============================== (teh inactive)\n"

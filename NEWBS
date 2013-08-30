@@ -2,13 +2,29 @@
 
 git use cases:
 
-	Dropbox: Get others code and make your code available to others.
 
-	Synchronization:
+	Synchronization: (Dropbox) Get others code and make your code available to others.
 
-	Configuration Management
+		Do work in WIP.
 
-    Sandbox:
+		0. BRANCHNAME=git br --no-color | grep '*' | sed 's/^..//'
+		1. git stash
+		2. git checkout master
+		3. git fetch
+		4. git checkout $BRANCHNAME
+		5. git merge master
+		6. git checkout master
+		4. git merge --squash $BRANCHNAME
+		5. git push
+
+
+	Configuration Management: Version 1 for robot 1, Version 2 for robot 2
+
+    Sandbox: Test something out without fear of messing someone else up.
+
+		git checkout -b sandbox_name
+		git checkout 
+
 
 
 

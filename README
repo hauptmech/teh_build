@@ -214,6 +214,50 @@ The rules and conventions
         but other projects in the same directory structure will not bother them.
 
  
+Notes 28 Aug
+============
+
+The model should be clear from usage of 'teh'
+
+Concept 1: We work with a primary (central/coordination) server.
+
+	teh server
+
+Concept 2: Our directory tree is a collection of repos
+
+	teh repos
+	teh git
+	teh svn
+
+Concept 2.5: Some commands can be run against groups of repos
+
+	teh git status
+	teh git fetch
+
+
+Concept 3: Some repos are active (linking against each other) others are not.
+
+	teh on,off,active,inactive
+
+Concept 4: cmake, make build cycle
+
+	teh cmake,make $1
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
