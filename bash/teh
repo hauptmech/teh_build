@@ -25,47 +25,9 @@ else
 	cat <<"==="
 SERVER_USER=drc
 SERVER_NAME=debiangpm
-SERVER_GIT=~/git
 REPOSITORY=raring_drc
 ===
 fi
-
-function usage 
-{
-	echo $1
-	#sed  -e "s|teh|${1}|"  <<"==="
-	sed  -e "s|teh|${1}|"  <<"==="
-
-Usage:
-
-  teh list                    # List available repositories and subdirectories
-                                on the server
-
-  teh get <project_name>      # Git clone a project from the server if it's found
-  teh new <project_name>      # Create a new repository from template
-
-  teh build <project_name>    # Create new <project_name>/build; cmake ..
-  teh publish <project_name>  # Make packages and upload to server
-
-  teh git [status|branch|fetch] #git operations on all repositories
-
-  teh setup                   # Initial setup
-  teh setup_ssh_keys          # Install the keys for the server
-  teh config                  # Dump the current config file
-  teh upgrade                 # apt-get update & ugrade the project packages repository.
-
-
-  publish:  Publish auto increments the version number, then runs cpack to build
-	          the debian packages, the uploads them to the server for others to
-	          use.
-
-  build:    Build creates a clean build of a <project> by removing the 
-	          <project>/build directory, recreating it, and the running first
-	          cmake and then make.
-===
-
-}
-
 
 function check_for_development_root
 {
@@ -117,6 +79,41 @@ function locate_project
 	fi	
 }
 
+function usage 
+{
+	echo $1
+	#sed  -e "s|teh|${1}|"  <<"==="
+	sed  -e "s|teh|${1}|"  <<"==="
+
+Usage:
+
+  teh list                    # List available repositories and subdirectories
+                                on the server
+
+  teh get <project_name>      # Git clone a project from the server if it's found
+  teh new <project_name>      # Create a new repository from template
+
+  teh build <project_name>    # Create new <project_name>/build; cmake ..
+  teh publish <project_name>  # Make packages and upload to server
+
+
+  teh setup                   # Initial setup
+  teh setup_ssh_keys          # Install the keys for the server
+  teh config                  # Dump the current config file
+  teh upgrade                 # apt-get update & ugrade the project packages repository.
+
+
+  publish:  Publish auto increments the version number, then runs cpack to build
+	          the debian packages, the uploads them to the server for others to
+	          use.
+
+  build:    Build creates a clean build of a <project> by removing the 
+	          <project>/build directory, recreating it, and the running first
+	          cmake and then make.
+===
+
+}
+
 function teh_config
 {
 	check_for_development_root
@@ -138,7 +135,7 @@ function git_global
 	while [ ! $RET -eq 0 ]; do
 		echo -e "\n!!! The git global user info is not set..\n"
 		read -p "Enter your $1 for git log messages: " gitvalue
-		git config --global --add user.$1 "${gitvalue}"
+		git config --global --add user.$1 $gitvalue
 		git config --global --get user.$1 &>/dev/null
 		RET=$?
 	done
@@ -264,16 +261,12 @@ function new_repo
 		select what_to_do in "Use bin (exe) template?" "Use library template?" "Abort!"; do
 			case $REPLY in
 				1) 
-					pushd utils/Demo_Application
-					git checkout latest
-					popd
-					cp -ar utils/Demo_Application/* $1; rm -rf $1/.git $1/build; break;;
+					cd Demo_Application; git checkout latest; cd ..
+					cp -ar Demo_Application/* $1; rm -rf $1/.git $1/build; break;;
 				2) 
-					pushd utils/Demo_Library
-					git checkout latest
-					popd
+					cd Demo_Library; git checkout latest; cd .. 
 					#TODO: return to previous state (tag current before chkout. delete tag after done)
-					cp -ar utils/Demo_Library/* $1; rm -rf $1/.git $1/build; break;;
+					cp -ar Demo_Library/* $1; rm -rf $1/.git $1/build; break;;
 				3) echo "Aborting new repo!"; exit ;;
 			esac
 		done
@@ -333,7 +326,6 @@ function get_inactive
 ############################ Script starts here ##################################
 
 if [ $# -lt 1 ]; then
-	echo -e "\nrun 'teh help' to print usage info"
 	echo -e "\n\n== Project root =================================== (teh root)\n"
 	showroot    #To do, figure out how to make bash leave us here
 	echo ""
@@ -342,7 +334,6 @@ if [ $# -lt 1 ]; then
 	echo "$(get_active)"
 	echo -e "\n\n== Inactive Projects =================================== (teh inactive)\n"
 	echo "$(get_inactive)"
-	echo -e "\n\n"
 fi
 
 if [ $# -eq 2 ]; then
@@ -387,10 +378,10 @@ case "$1" in
 		echo -e "\n$repo\n===================="
 		pushd $repo &>/dev/null
 		case "$2" in
-			status)
+			st)
 				git status -s 
 			;;
-			branch)
+			br)
 				git br --no-color | grep \* 
 			;;
 			fetch)
@@ -438,12 +429,11 @@ case "$1" in
 		echo -e "Cloning Build_Tools, CMakeModules, Demo_Library, Demo_Application"
 		#sudo apt-get install -y --allow-unauthenticated teh-build-tools #Not sure this is a good idea
 		cd ${TARGET}
-		touch .development_root  # Marker to stop searches for local libraries from bubbling up too much
 		mkdir -p utils; cd utils
 		git clone $SERVER_USER@$SERVER_NAME:git/utils/Build_Tools.git
 		git clone $SERVER_USER@$SERVER_NAME:git/utils/Demo_Application.git
 		git clone $SERVER_USER@$SERVER_NAME:git/utils/Demo_Library.git
-
+		touch .development_root  # Marker to stop searches for local libraries from bubbling up too much
 
 		;;
 
