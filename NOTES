@@ -1,0 +1,274 @@
+
+Here is the development files organization (based on cmake) that I came up with. The intent
+was to allow people to easily start working without having to worry about how they can fit
+into the bigger system. 
+
+We assume that all developed modules will be published to the group as binary packages (and
+thus that everyone is at least testing and hopefully using the same Ubuntu distribution).
+
+We also assume that each person will develop 1 or more applications and libraries in parallel
+which in turn depend on any or all of the other modules being developed by the group.
+
+The expected typical use cases are:
+
+	Modify an existing module and re-publish it.
+	Start a new module from a template
+	Start a new module by adding new features and removing unneeded features on a copy of
+		an existing module.
+	Bifurcate a large module into two independent smaller modules (spin off a library, etc)
+
+
+The build system and file organization is very simple. The goal is to make it easy to 
+add or start new application or libraries. It has the following features:
+
+	The "development projects" are all the software we are working on and releasing to 
+		each other. They can either be installed as binary packages ("system installed project")
+		or they can be built from source locally ("locally developed project")
+
+	Each project (library or application) either has it's own subdirectory in the development
+		root directory or if desired, they can organized in groups in subdirectories of
+		the development root ( 1 level deep maximum, see below if you want to do this). 
+
+	Each library project will package the correct *Config.cmake file so other projects
+		can use it when it is installed in the system.
+
+	Each project will automatically use the locally developed projects which have been activated
+		instead of the system installed projects.
+
+	Not all projects are active (some being used as living documentaton). Projects are activated by
+		creating the typical <project_dir>/build folder.
+
+	Each project is independent, with a very simple CMakeLists.txt. The project directory structure 
+		is intentionally simple.
+
+
+Anyone with little or no experience with cmake should be able to quickly modify the template or
+an existing project to fit their needs. The cmake files are very close to the absolute minimal,
+and can support most use cases cleanly as-is. This allows any level of complex cmake scripting 
+to be built on top (though I hope the elegance of the current approach makes this unnecissary).
+
+Limitations: 
+
+	CMake itself is not involved in building hierarchies of libraries and applications
+and therefore if there is anyone working on such a hierarchy, they must deal with dependencies
+in another way.
+
+	For those who end up working on an interdependent hierarchy, the debian packaging dependencies
+embedded in the CMakeLists.txt in concert with a short python script can automate building the 
+full hierarchy in the correct sequence.
+
+	Publishing (packaging and uploading) modules is already automated for a single package,
+and this can easily be extended to do all projects that are active.
+
+	While it is possible to put all projects in a single repository, this forces a level 
+of synchronization between developers. The intention is that each project directory is a
+separate repository (or a separate checkout of a svn subfolder) and that a utility script
+(already partially written) automates new-system-setup, project retrieval and creation,
+and other tasks you might do.
+
+Summary:
+
+	* There is not a master Makefile or CMakeLists.txt to build all libraries and executables.
+	* Each independent library or group of executables (module) has it's own subfolder.
+	* Each module is activated by creating the 'build' directory and building the module. 
+	* Each module will automatically find and use other active modules.
+	
+
+The goal of this project layout is to provide a very low barrier to entry for 
+starting new modules, a very simple module structure, and easy expansion.
+
+A compromise we make is that we allow lots of parallel directories and 
+repositories. 
+
+
+To ease work, we provide some scripts to help out.
+
+
+Directories:
+
+./CMakeModules      #Houses FindXXXX.cmake files for our project
+./Build_Tools       #Scripts for building sources
+
+
+
+
+
+Normally you will be using the libraries of others as installed 
+binaries.
+
+
+sudo apt-get update
+sudo apt-get upgrade
+
+
+Development Workflow
+====================
+
+The DRC project has standardized on some software development tools and workflow so that all the software
+modules written for the DRC are easier to integrate. Also, many people have little experience developing
+software on linux, and this standardization will allow everyone to learn the same skills and support each
+other in using those skills. 
+
+The basic workflow for developing software is to sit down with either an existing project or to create a
+new one; write, build and test source code until it achieves the desired goal; and then distribute it in binary
+form to those who need to use it.
+
+When working in groups on the same source code we also typically use a version control software to track
+changes and make it easy for everyone to access the current version of the source code. (It is also best
+practice to use version control software when developing alone.
+
+The tools we are standardizing on are: git for version control, cmake for managing the building of source
+code into binaries. 
+
+We also have a standard way to organize all the files in a project and a standard way to organize groups
+of projects. 
+
+To help automate doing all this we have a helper tool called 'teh'.
+
+The typical workflow looks like this:
+
+	When you start writing a new module
+	===================================
+	Create a new project by using teh to copy either an existing project or one of the project templates.
+
+	When you sit down to work each day
+	==================================
+	--->Pull any changes to the software made by others to your computer.
+	|   Write code
+	|   Build the code
+	|   Test the code
+	----Repeat
+
+		Push your changes to the repository so others can access it.
+
+	When you achieve a bug fix or new feature you  want to publish
+	==============================================================
+
+	Use 'teh publish <project>' to make an ubuntu package and put it on the package server. Everyone
+	will using the same Linux Distribution and update daily 
+
+
+
+The Development process.
+========================
+
+The basic idea is to have a small number of minimum impact rules and conventions
+that have a large impact on our productivity and organization. Hopefully this
+leaves room for whatever complexity is needed to get the job done, while 
+creating constraints that guide productivity and save time.
+
+We begin with ideas, then write small proofs of concept and tests to understand
+a problem, then write code to solve a problem, then we polish the code and its
+interface (as a library or as yarp module), then we publish this code for others
+to use, then we fix bugs and add features for others and publish newer versions.
+And after all that we start in on the next problem.
+
+To help automate this process, we use a number of tools. We have the 'teh' tool
+which automates getting existing projects, starting new ones, publishing
+ubuntu packages for others, and updating your system with the packages of others.
+The 'teh' tool does nothing special in itself, just saves a (significant) bit of 
+typing and recall of server parameters.
+
+We use git to make it easier to share and work on code simultaneously, as well as
+track changes to the code over time.  
+
+We use cmake to help with the compilation process. We describe the organization of
+our library or program in a file called CMakeLists.txt and cmake uses that to figure
+out how to compile our code.
+
+We use C++. The C++11 dialect is preferred but any other is acceptable as long 
+as it's specified. C and other languages can be used in special cases.
+
+
+In general our rules and conventions help ease the development process, especially
+where code integration and cooperation are concerned. If you already know these
+tools (C++, cmake, git) then you will be able to use them normally. If you don't
+know these tools then hopefully the rules and convetions will reduce the learning
+curve significantly.
+
+
+The rules and conventions
+=========================
+
+    cmake:
+        Use the libConfig.cmake.in file and and set corresponding variables in 
+		your cmake file when generating the libConfig.cmake file and when using
+        find_package to locate other projects. 
+
+        If you use the provided CMakeLists.txt template then you don't need to
+        worry about understanding the details above. 
+
+    c++:
+        Read, learn, and follow the style guide. It really helps all of us be
+        able to read others code and understand it. It's a short as possible.
+
+    layout:
+        cmake and teh use the file '.development_root' to identify the root
+        directory of all your projects. The main directory of any of your 
+        projects must be no more than 3 directories down. Any project that
+        has a ./build directory is considered active and will be used by 
+        other projects.
+
+        Otherwise there are no restrictions. Only projects using our libConfig
+        and CMakeLists.txt file will be able to find each other automatically
+        but other projects in the same directory structure will not bother them.
+
+ 
+Notes 28 Aug
+============
+
+The model should be clear from usage of 'teh'
+
+Concept 1: We work with a primary (central/coordination) server.
+
+	teh server
+
+Concept 2: Our directory tree is a collection of repos
+
+	teh repos
+	teh git
+	teh svn
+
+Concept 2.5: Some commands can be run against groups of repos
+
+	teh git status
+	teh git fetch
+
+
+Concept 3: Some repos are active (linking against each other) others are not.
+
+	teh on,off,active,inactive
+
+Concept 4: cmake, make build cycle
+
+	teh cmake,make $1
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
