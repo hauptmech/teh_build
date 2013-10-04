@@ -1,0 +1,77 @@
+# Authors: Traveler Hauptman, 23 August 2013
+#          Enrico Mingo
+#
+    SET(LIBRARY_NAME "comanMath")  #<-------Change!
+    SET(INCLUDE_PATH_INDICATOR_FILE "comanMath/comanmath.h") #<------Change!
+
+
+    PROJECT(${LIBRARY_NAME})
+    cmake_minimum_required(VERSION 2.8)
+
+# Set includes
+
+    # ./include holds the public api
+    include_directories(${CMAKE_SOURCE_DIR}/include)
+	# ./src holds our code and private *.h files
+    include_directories(${CMAKE_SOURCE_DIR}/src)
+
+# Source code & build targets
+
+    set( LIBRARY1_SOURCES
+       src/comanmath.cpp
+    )
+
+    add_library(${LIBRARY_NAME} SHARED ${LIBRARY1_SOURCES} )
+
+# Find dependencies
+
+	# If you use fortran...
+    enable_language(Fortran)
+
+	find_package(teh-build-tools)
+	teh_find_local_libraries()
+
+	find_package(boost-numeric-bindings REQUIRED)
+
+    teh_add_dependency(boost-numeric-bindings)
+
+	teh_add_target(${LIBRARY_NAME})
+
+	teh_create_config_file(${LIBRARY_NAME} ${INCLUDE_PATH_INDICATOR_FILE})
+
+    set( LIBRARIES
+        ${Boost_LIBRARIES}
+        ${LAPACK_LIBRARIES}
+        #Explicit libraries to be linked, and FIND_PACKAGE libraries go here
+    )
+
+    target_link_libraries(${LIBRARY_NAME} ${LIBRARIES} )
+
+# Install
+    install(TARGETS ${LIBRARY_NAME} DESTINATION lib/${LIBRARY_NAME})
+
+	install(DIRECTORY ${CMAKE_SOURCE_DIR}/include DESTINATION include)
+
+# Packaging
+	set(CPACK_PACKAGE_VERSION_MAJOR "0")
+	set(CPACK_PACKAGE_VERSION_MINOR "0")
+	set(CPACK_PACKAGE_VERSION_PATCH "1")
+
+	set(CPACK_DEBIAN_PACKAGE_DEPENDS "boost-numeric-bindings")
+
+	set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Enrico's coman math library")
+	set(CPACK_PACKAGE_DESCRIPTION "
+	Not sure what's really in here.
+	"
+	)
+	set(CPACK_PACKAGE_CONTACT "enrico.mingo@iit.it")
+
+
+	########### Leave the variables below as-is #############
+	set(CPACK_GENERATOR "DEB")
+	set(CPACK_PACKAGE_NAME ${LIBRARY_NAME})
+
+	include(CPack)
+
+##############################################################################
+
