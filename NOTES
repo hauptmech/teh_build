@@ -1,5 +1,5 @@
 
-Here is the development files organization (based on cmake) that I came up with. The intent
+The intent
 was to allow people to easily start working without having to worry about how they can fit
 into the bigger system. 
 
