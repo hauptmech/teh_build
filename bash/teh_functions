@@ -155,6 +155,7 @@ function get_cert
   mkdir -p /usr/local/share/ca-certificates
   sudo scp $SERVER_USER@$SERVER_NAME:/etc/ssl/certs/$1 /usr/local/share/ca-certificates
   sudo update-ca-certificates
+  echo "Got cert..."
 
 }
 # Get ssl certificates, install them, and add package repository to sources.list.d

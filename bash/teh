@@ -52,7 +52,6 @@ if [ $# -eq 2 ]; then
 	TARGET=${2%/}
 	echo -e "\nTARGET is $TARGET \n"
 fi
-
 # Check that git is setup, force setup if not.
 git_global name
 git_global email
@@ -284,6 +283,8 @@ build) # Build project
 	make
 
 ;;
+
+
 rebuild) # Build project
 	locate_project ${2}
 	goto_development_root
@@ -291,7 +292,7 @@ rebuild) # Build project
 	if [ ! -d ${TARGET}/build ]; then
 		mkdir ${TARGET}/build
 		if [ ! $? -eq 0 ]; then 
-			echo -e "\nTried to activate ${TARGET} but it does not appear to be a project director so I'm aborting! \n\n"
+			echo -e "\nTried to activate ${TARGET} but it does not appear to be a project directory so I'm aborting! \n\n"
 			exit 1
 		fi
 	fi
@@ -310,8 +311,9 @@ rebuild) # Build project
 set_config) #Setup local config file
 		teh_config
 ;;
-get_cert)
-  get_cert ${2}
+
+get_cert) #Grab an authentication certificate from the server
+	get_cert ${2}
 ;;
 
 esac

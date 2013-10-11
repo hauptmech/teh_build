@@ -5,17 +5,16 @@ PROJECT(${PRJ_NAME})
 cmake_minimum_required(VERSION 2.8)
 
 set(CMAKE_INSTALL_PREFIX "/usr")
-#Create our special config file
-configure_file(${CMAKE_SOURCE_DIR}/cmake/teh-build-tools-config.cmake 
-		  "${PRJ_NAME}-config.cmake" @ONLY)
 
 set( BASH_SCRIPTS_TO_INSTALL
 	bash/teh
+	bash/teh_functions
+	bash/teh_makeall
 )
 
 install(PROGRAMS ${BASH_SCRIPTS_TO_INSTALL} DESTINATION bin)
 install(FILES bash/teh_autocomplete DESTINATION /etc/bash_completion.d)
-install(FILES ${CMAKE_BINARY_DIR}/${PRJ_NAME}-config.cmake DESTINATION share/${PRJ_NAME}/cmake)
+install(FILES cmake/${PRJ_NAME}.cmake DESTINATION share/${PRJ_NAME}/cmake)
 install(FILES cmake/libConfig.cmake.in DESTINATION share/${PRJ_NAME}/cmake)
 install(FILES cmake/SampleLibCMakeLists.txt DESTINATION share/${PRJ_NAME}/cmake)
 install(FILES cmake/SampleBinCMakeLists.txt DESTINATION share/${PRJ_NAME}/cmake)
