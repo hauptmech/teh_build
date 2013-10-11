@@ -310,6 +310,9 @@ rebuild) # Build project
 set_config) #Setup local config file
 		teh_config
 ;;
+get_cert)
+  get_cert ${2}
+;;
 
 esac
 

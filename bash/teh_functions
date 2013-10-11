@@ -150,6 +150,13 @@ function abort_if_project_is_not_active
 		exit
 	fi }
 
+function get_cert
+{
+  mkdir -p /usr/local/share/ca-certificates
+  sudo scp $SERVER_USER@$SERVER_NAME:/etc/ssl/certs/$1 /usr/local/share/ca-certificates
+  sudo update-ca-certificates
+
+}
 # Get ssl certificates, install them, and add package repository to sources.list.d
 function setup_https_package_repo
 {
