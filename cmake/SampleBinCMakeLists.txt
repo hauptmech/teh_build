@@ -6,7 +6,8 @@
     PROJECT(${EXECUTABLE_NAME})
     cmake_minimum_required(VERSION 2.8)
 
-	find_package(teh-build-tools)
+    set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
+	include(teh-build-tools)
 	teh_find_local_libraries()()
 
 

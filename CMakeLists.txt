@@ -17,6 +17,8 @@ install(PROGRAMS ${BASH_SCRIPTS_TO_INSTALL} DESTINATION bin)
 install(FILES bash/teh_autocomplete DESTINATION /etc/bash_completion.d)
 install(FILES ${CMAKE_BINARY_DIR}/${PRJ_NAME}-config.cmake DESTINATION share/${PRJ_NAME}/cmake)
 install(FILES cmake/libConfig.cmake.in DESTINATION share/${PRJ_NAME}/cmake)
+install(FILES cmake/SampleLibCMakeLists.txt DESTINATION share/${PRJ_NAME}/cmake)
+install(FILES cmake/SampleBinCMakeLists.txt DESTINATION share/${PRJ_NAME}/cmake)
 
 set(CPACK_GENERATOR "DEB")
 set(CPACK_PACKAGE_NAME ${PRJ_NAME})

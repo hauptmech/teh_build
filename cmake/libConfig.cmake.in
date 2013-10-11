@@ -1,23 +1,20 @@
 # Traveler Hauptman, 23 Aug 2013
 # Simple template to find local includes and libraries before system ones.
 #
-# The variables LIBRARY_NAME and INCLUDE_PATH_INDICATOR_FILE are used
+# The variables TEH_LIBRARY_NAME and TEH_INCLUDE_PATH_INDICATOR_FILE are used
 # this projects CMakeLists.txt generates xxxConfig.cmake  
 #
-# The variables LOCAL_FIND_PATHS and LOCAL_FIND_LIBRARY_PATHS are set
-# by the calling CMakeLists.txt to where we expect to find the include
-# directory indicator file. They will be set by the CMakeLists.txt 
-# of the project trying to use this file via find_package(xxx)
+  # Required
+# TEH_LIBRARY_NAME - The name of this library package
+# TEH_EXPORTED_LIBRARIES - Individual names of library files
+# TEH_INCLUDE_PATH_INDICATOR_FILE - Marker file for include directory
 
+	# For dependencies
+# TEH_DEPENDENCY_LIBRARIES - Libraries we depend on
+# TEH_DEPENDENCY_INCLUDE_DIRS - Include dirs we depend on
 
-# TEH_LIBRARY_NAME
-# TEH_EXPORTED_LIBRARIES
-# TEH_DEPENDENCY_LIBRARIES
-# INCLUDE_PATH_INDICATOR_FILE
-# TEH_INC_SUFFIX
-
-# LOCAL_FIND_INCLUDE_PATHS
-# LOCAL_FIND_LIBRARY_PATHS
+	# For extra search power
+# TEH_INC_SUFFIX - Location of include dir relative to lib dir
 
 ### find and set xxx_LIBRARIES ###
 
@@ -25,12 +22,13 @@
 list(APPEND	LIBRARIES_PROCESSING_LIST "@TEH_EXPORTED_LIBRARIES@")
 FOREACH(elt IN LISTS LIBRARIES_PROCESSING_LIST) 
 	# Search local paths first
+	# We expect the library.so to be in the same dir as library_config.cmake
 	FIND_LIBRARY(${elt}_LIBRARY "${elt}"
 		PATHS ${CMAKE_CURRENT_LIST_DIR} NO_DEFAULT_PATH)
-	#	PATHS ${LOCAL_FIND_LIBRARY_PATHS} NO_DEFAULT_PATH)
+
 	# Search system paths otherwise
 	FIND_LIBRARY(${elt}_LIBRARY "${elt}"
-		PATHS @CMAKE_INSTALL_PREFIX@/lib)
+		PATHS @CMAKE_INSTALL_PREFIX@/lib /usr/lib)
 
 	if (${elt}_LIBRARY)
 		list(APPEND @TEH_LIBRARY_NAME@_LIBRARIES ${${elt}_LIBRARY})
@@ -46,17 +44,17 @@ list(APPEND @TEH_LIBRARY_NAME@_LIBRARIES "@TEH_DEPENDENCY_LIBRARIES@")
 # Our convention is that include files are next to library files so we 
 # search ../include too.
 
-FIND_PATH(@TEH_LIBRARY_NAME@_INCLUDE_DIR @INCLUDE_PATH_INDICATOR_FILE@
-    PATHS ${LOCAL_FIND_INCLUDE_PATHS} ${LOCAL_FIND_LIBRARY_PATHS}
+FIND_PATH(@TEH_LIBRARY_NAME@_INCLUDE_DIR @TEH_INCLUDE_PATH_INDICATOR_FILE@
+    PATHS ${CMAKE_CURRENT_LIST_DIR}
 	PATH_SUFFIXES "../include" ${TEH_INC_SUFFIX} NO_DEFAULT_PATH)
 
 # Search system paths otherwise
-FIND_PATH(@TEH_LIBRARY_NAME@_INCLUDE_DIR @INCLUDE_PATH_INDICATOR_FILE@ 
-	PATHS @CMAKE_INSTALL_PREFIX@/include)
+FIND_PATH(@TEH_LIBRARY_NAME@_INCLUDE_DIR @TEH_INCLUDE_PATH_INDICATOR_FILE@ 
+	PATHS @CMAKE_INSTALL_PREFIX@/include /usr/include)
 
 SET(@TEH_LIBRARY_NAME@_INCLUDE_DIRS ${@TEH_LIBRARY_NAME@_INCLUDE_DIR})
 list(APPEND @TEH_LIBRARY_NAME@_INCLUDE_DIRS "@TEH_DEPENDENCY_INCLUDE_DIRS@")
 
 #SET(@LIBRARY_NAME@_DEFINITIONS ...)
-# @LIBRARY_NAME@_FOUND is set to "1" by FIND_PACKAGE().
+#@LIBRARY_NAME@_FOUND is set to "1" by FIND_PACKAGE().
 
