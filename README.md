@@ -56,7 +56,7 @@ How to use it:
 
 teh_build_tools/cmake/Sample* illustrate how to use the teh_* macros
 
-add a 'cmake' directory with a copy of 'config.cmake.in'
+add a 'cmake' directory with a copy of 'config.cmake.in' and 'teh-build-tools.cmake'
 
 
 Modify and use your CMakeLists.txt exactly as you would for any other project.
