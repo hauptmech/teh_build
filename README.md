@@ -45,6 +45,12 @@ for actively developed libraries first, then the system installation locations.
 How to install it:
 -----------------
 
+To use the CMake include and config files, no installation is needed. Just
+grab the two files listed below in the usage section.
+
+Installed, teh-build-tools includes some bash helper scripts that can speed
+up development.
+
 Install teh_build_tools from the source in the normal way:
 		
     mkdir build; cd build; cmake ..
