@@ -75,14 +75,7 @@ endmacro()
 
 # Add this dependency to the dependency chain searched during configuration
 macro (teh_add_dependency LIBNAME)
-	if (${LIBNAME}_LIBRARIES)
-	message("Adding library dependency: ${LIBNAME} ${${LIBNAME}_LIBRARIES}")
-	list(APPEND TEH_DEPENDENCY_LIBRARIES "${${LIBNAME}_LIBRARIES}")
-	endif()
-	if (${LIBNAME}_INCLUDE_DIRS)
-	message("Adding include files dependency: ${LIBNAME} ${${LIBNAME}_INCLUDE_DIRS}")
-	list(APPEND TEH_DEPENDENCY_INCLUDE_DIRS "${${LIBNAME}_INCLUDE_DIRS}")
-	endif()
+	LIST(APPEND TEH_DEPENDENCY_LIBRARIES "${LIBNAME}")
 endmacro()
 
 
@@ -102,7 +95,8 @@ macro (teh_create_config_file MY_LIBRARY_NAME INC_PATH_INDICATOR_FILE )
 		message(FATAL_ERROR " the variable $INCLUDE_PATH_INDICATOR_FILE must be set to an include file that can be used in searches to identify the location of this package when installed! ")
 	endif()
 
-	configure_file(${CMAKE_CURRENT_SOURCE}/libConfig.cmake.in 
+	find_file(CONF_FILE_PATH libConfig.cmake.in PATHS ${CMAKE_MODULE_PATH} )
+	configure_file(${CONF_FILE_PATH}
 				  "${TEH_LIBRARY_NAME}Config.cmake" @ONLY)
 	install(FILES "${TEH_LIBRARY_NAME}Config.cmake" DESTINATION lib/${TEH_LIBRARY_NAME})
 
