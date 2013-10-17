@@ -48,10 +48,10 @@ How to install it:
 To use the CMake include and config files, no installation is needed. Just
 grab the two files listed below in the usage section.
 
-Installed, teh-build-tools includes some bash helper scripts that can speed
+Installed, teh-build includes some bash helper scripts that can speed
 up development.
 
-Install teh_build_tools from the source in the normal way:
+Install teh_build from the source in the normal way:
 		
     mkdir build; cd build; cmake ..
     make 
@@ -60,9 +60,23 @@ Install teh_build_tools from the source in the normal way:
 How to use it:
 --------------
 
-teh_build_tools/cmake/Sample* illustrate how to use the teh_* macros
+teh_build/cmake/Sample* illustrate how to use the teh_* macros
+teh_build/templates/* Also have examples
 
-add a 'cmake' directory with a copy of 'config.cmake.in' and 'teh-build-tools.cmake'
+2 Options...
+
+1. Use the system installed files to load it
+------------------------------
+
+find_package(teh-build)
+
+2. Embed it so teh-build does not need to be installed
+---------------------------------------------------
+
+#add a 'cmake' directory to your source with a copy of 
+#'config.cmake.in' and 'teh-build.cmake'
+set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
+include(teh-build)
 
 
 Modify and use your CMakeLists.txt exactly as you would for any other project.
