@@ -78,6 +78,7 @@ macro (teh_add_dependency LIBNAME)
 	LIST(APPEND TEH_DEPENDENCY_LIBRARIES "${LIBNAME}")
 endmacro()
 
+set(TEH_BUILD_DIR ${CMAKE_CURRENT_LIST_DIR})
 
 # Create our ${LIBRARY_NAME}Config.cmake file
 macro (teh_create_config_file MY_LIBRARY_NAME INC_PATH_INDICATOR_FILE )
@@ -95,7 +96,9 @@ macro (teh_create_config_file MY_LIBRARY_NAME INC_PATH_INDICATOR_FILE )
 		message(FATAL_ERROR " the variable $INCLUDE_PATH_INDICATOR_FILE must be set to an include file that can be used in searches to identify the location of this package when installed! ")
 	endif()
 
-	find_file(CONF_FILE_PATH libConfig.cmake.in PATHS ${CMAKE_MODULE_PATH} )
+#	message("Searching: \n    ${CMAKE_MODULE_PATH}\n    ${CMAKE_CURRENT_LIST_DIR}\n    ${TEH_BUILD_DIR}")
+	find_file(CONF_FILE_PATH libConfig.cmake.in PATHS ${CMAKE_MODULE_PATH} ${TEH_BUILD_DIR} )
+#    message("Found: ${CONF_FILE_PATH}")
 	configure_file(${CONF_FILE_PATH}
 				  "${TEH_LIBRARY_NAME}Config.cmake" @ONLY)
 	install(FILES "${PROJECT_BINARY_DIR}/${TEH_LIBRARY_NAME}Config.cmake" DESTINATION lib/${TEH_LIBRARY_NAME})

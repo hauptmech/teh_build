@@ -1,5 +1,5 @@
 #Author: Traveler Hauptman, 23 Aug 2013
-SET(PRJ_NAME "teh-build-tools") 
+SET(PRJ_NAME "teh-build") 
 
 PROJECT(${PRJ_NAME})
 cmake_minimum_required(VERSION 2.8)
@@ -11,6 +11,13 @@ set( BASH_SCRIPTS_TO_INSTALL
 	bash/teh_functions
 	bash/teh_makeall
 )
+
+# Allow teh-build to be installed system wide
+configure_file(${CMAKE_SOURCE_DIR}/cmake/teh-build.cmake 
+          "${PRJ_NAME}-config.cmake" @ONLY)
+
+install(FILES ${CMAKE_BINARY_DIR}/${PRJ_NAME}-config.cmake DESTINATION lib/${PRJ_NAME})
+install(FILES cmake/libConfig.cmake.in DESTINATION lib/${PRJ_NAME})
 
 install(PROGRAMS ${BASH_SCRIPTS_TO_INSTALL} DESTINATION bin)
 install(FILES bash/teh_autocomplete DESTINATION /etc/bash_completion.d)
