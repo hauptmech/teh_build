@@ -56,7 +56,7 @@ function showroot
 {
 	[ -d ./build ] && cd ..
 	while [ ! -f .development_root ] &&  [ ! -d dev ]; do cd ..; done
-	[ -f .development_root ] && echo $(pwd)
+	[ -f .development_root ] && echo "Root: $(pwd)"
 }
 
 function locate_project
@@ -76,46 +76,140 @@ function locate_project
 
 function usage 
 {
-	echo $1
+	echo "Program: $1"
 	#sed  -e "s|teh|${1}|"  <<"==="
-	sed  -e "s|teh|teh|"  <<"==="
+if [ $1 = "git" ];then
+cat - <<"==="
+
+  git
+  ===
+  teh git status              # Print status of each project
+  teh git branch              # Print branch of each project
+  teh git fetch               # Fetch each project
+
+===
+
+elif [ $1 = "cmake" ];then
+cat - <<"==="
+
+  cmake
+  =====
+  teh active                  # List of subfolders with cmake build directories
+  teh inactive                # List of subfolders without cmake build directories
+  teh on [project]            # Activate project (creates build dir)
+  teh off [project]           # Deactivate project (deletes build dir)
+  teh build [project]         # cmake ..; make
+  teh rebuild [project]       # rm -rf build; mkdir build; cd build; cmake ..; make
+
+
+===
+
+elif [ $1 = "project" ];then
+cat - <<"==="
+
+  Project
+  =======
+  teh                         # Summary of projects
+  teh repos                   # List of all subdirs with repositories
+  teh locate [<dir>]          # Print path of the specified project
+
+  remote
+  ------
+  teh list                    # List git repos on remote server
+  teh listall                 # List git repos (including subdirs) on remote server
+  teh get <dir>               # Clone a git repo displayed by 'teh list' locally
+  teh new <dir>               # If local project exists, create a remote repo to 
+                              # match. Else create local dir and remote dir using
+                              # template.
+
+
+===
+
+elif [ $1 = "setup" ];then
+
+cat - <<"==="
+
+  Setup
+  =====
+  teh setup <path>            # Configure folder as the root development
+                              # folder for a group of projects
+  teh set_config <path>       # Update or Create a config file 
+  teh setup_ssh_keys          # Install the keys for the server
+  teh config                  # Dump the current config file
+
+
+===
+
+else
+
+cat - <<"==="
+
+teh automates working with groups of development projects. It helps with
+    setting up new projects, working with git repositories, building
+    cmake projects, and publishing binary packages.
 
 Usage:
+
+  teh help <heading>          # Print only usage under heading
+
+  setup
+  =====
+  teh setup <path>            # Configure folder as the root development
+                              # folder for a group of projects
+  teh set_config <path>       # Update or Create a config file 
+  teh setup_ssh_keys          # Install the keys for the server
+  teh config                  # Dump the current config file
+
+
+  project
+  =======
+  teh                         # Summary of projects
+  teh repos                   # List of all subdirs with repositories
+  teh locate [<dir>]          # Print path of the specified project
+
+  remote
+  ------
+  teh list                    # List git repos on remote server
+  teh listall                 # List git repos (including subdirs) on remote server
+  teh get <dir>               # Clone a git repo displayed by 'teh list' locally
+  teh new <dir>               # If local project exists, create a remote repo to 
+                              # match. Else create local dir and remote dir using
+                              # template.
+
+
+  cmake
+  =====
+  teh active                  # List of subfolders with cmake build directories
+  teh inactive                # List of subfolders without cmake build directories
+  teh on [<dir>]              # Activate project (creates build dir)
+  teh off [<dir>]             # Deactivate project (deletes build dir)
+  teh build [<dir>]           # cmake ..; make
+  teh rebuild [<dir>]         # rm -rf build; mkdir build; cd build; cmake ..; make
+
+
+  git
+  ===
+  teh git status              # Print status of each project
+  teh git branch              # Print branch of each project
+  teh git fetch               # Fetch each project
+
+
+  ubuntu
+  ======
+  teh setup_repo              # Setup apt-get to use your custom package server
+  teh upgrade                 # Upgrade packages from custom server
+  teh publish                 # Bump revision numbers, create package with cpack
+                              # upload to package server and update package index
+
+
 
   Note: Most functionality expects that the root development folder we are 
         working within contains an marker file called ".development_root".
         > cd $MY_DEVELOPMENT_FOLDER
         > touch .development_root
 
-  teh config                  # Dump the current config file
-  teh set_config [path]       # Create a new config file 
-
-  teh list                    # List available repositories and subdirectories
-                                on the server
-
-  teh get <project_name>      # Git clone a project from the server if it's found
-  teh new <project_name>      # Create a new repository from template
-
-  teh build <project_name>    # Create new <project_name>/build; cmake ..
-  teh publish <project_name>  # Make packages and upload to server
-
-  teh git [status|branch|fetch] #git operations on all repositories
-
-
-  teh setup                   # Initial setup
-  teh setup_ssh_keys          # Install the keys for the server
-  teh upgrade                 # apt-get update & ugrade the project packages repository.
-
-
-  publish:  Publish auto increments the version number, then runs cpack to build
-	          the debian packages, the uploads them to the server for others to
-	          use.
-
-  build:    Build creates a clean build of a <project> by removing the 
-	          <project>/build directory, recreating it, and the running first
-	          cmake and then make.
 ===
-
+fi
 }
 
 # Guide user through making a config file in development root

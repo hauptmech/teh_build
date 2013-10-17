@@ -19,7 +19,7 @@ SCRIPTNAME=$0
 source teh_functions
 
 # If local or user global config file exists, use it, otherwise error.
-try_goto_development_root
+while [ ! -f .development_root ] && [ ! -d ./build ] && [ ! -d dev ]; do cd ..; done
 if [ -f ./.tehrc ]; then
 	source ./.tehrc
 elif [ -f ~/.tehrc ]; then
@@ -40,13 +40,12 @@ if [ -z $GIT_DIR ]; then
 fi
 
 if [ $# -lt 1 ]; then
-	echo -e "\n\n== Project root =================================== (teh root)\n"
-	showroot    #To do, figure out how to make bash leave us here
-	echo ""
+	showroot    
 	echo -e "\n\n== Active Projects ================================ (teh active)\n"
 	echo "$(get_active)"
 	echo -e "\n\n== Inactive Projects ============================== (teh inactive)\n"
 	echo "$(get_inactive)"
+    echo ""
 fi
 
 if [ $# -eq 2 ]; then
@@ -61,10 +60,10 @@ git_global email
 case "$1" in
 
 	help) # Print out help
-		usage $0
+		usage $2
 ;;
 	--help) # Print out help
-		usage $0
+		usage $2
 ;;
 	root) showroot;;
 	active) 
@@ -85,24 +84,28 @@ case "$1" in
 		fi
 ;;
 	git)
+		if [ -z $2 ];then
+          get_repos
+        else
 		goto_development_root
 		find . -name .git | sed 's/\/\.git//' | while read repo; do
-		echo -e "\n$repo\n===================="
-		pushd $repo &>/dev/null
-		case "$2" in
-			status)
-				git status -s 
-			;;
-			branch)
-				git br --no-color | grep \* 
-			;;
-			fetch)
-				git fetch 
-			;;
-		esac
-		popd &>/dev/null
+			echo -e "\n\n$repo\n===================="
+			pushd $repo &>/dev/null
+			case "$2" in
+				status)
+					git status -s 
+				;;
+				branch)
+					git br --no-color | grep \* 
+				;;
+				fetch)
+					git fetch 
+				;;
+			esac
+			popd &>/dev/null
 		done
 		popd &>/dev/null
+        fi
 ;;
 
 	list) 
@@ -121,13 +124,19 @@ case "$1" in
 		fi
 		;;
 
-	locate) locate_project
+	locate) locate_project ${2}
 	;;
+	cd) 
+
+
 	setup) 
+		if [ -z ${TARGET} ]; then
+			TARGET="./"
+        fi
 
 		if [ -d ${TARGET} ]; then 
 			echo -e "\nDirectory ${TARGET} already exists.\n" 
-            read -p "Are you sure you want me to add DRC specific stuff here? [y/N] " mess_with_this
+            read -p "Are you sure you want me to add teh specific stuff here? [y/N] " mess_with_this
             mess_with_this=${mess_with_this:-N}
             if [ ! $mess_with_this = "Y" ] && [ ! $mess_with_this = "y" ]; then 
 				exit 
@@ -137,11 +146,12 @@ case "$1" in
 		else
 			mkdir -p ${TARGET}
 		fi
-
-		echo -e "Cloning Build_Tools, CMakeModules, Demo_Library, Demo_Application"
-		#sudo apt-get install -y --allow-unauthenticated teh-build-tools #Not sure this is a good idea
 		cd ${TARGET}
 		touch .development_root  # Marker to stop searches for local libraries from bubbling up too much
+		teh_config ${TARGET}
+
+		echo -e "Cloning Build_Tools, CMakeModules, Demo_Library, Demo_Application"
+
 		mkdir -p utils; cd utils
 		git clone $SERVER_USER@$SERVER_NAME:git/utils/Build_Tools.git
 		git clone $SERVER_USER@$SERVER_NAME:git/utils/Demo_Application.git
