@@ -66,12 +66,10 @@ teh_build/templates/* Also have examples
 2 Options...
 
 1. Use the system installed files to load it
-------------------------------
 
     find_package(teh-build)
 
 2. Embed it so teh-build does not need to be installed
----------------------------------------------------
 
     #add a 'cmake' directory to your source with a copy of 
     #'config.cmake.in' and 'teh-build.cmake'
