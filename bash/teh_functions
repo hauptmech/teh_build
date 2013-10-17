@@ -62,12 +62,18 @@ function showroot
 function locate_project
 {
 	if [ -z $1 ]; then 
-		while [ ! -f .development_root ] && [ ! -d ./build ] && [ ! -d dev ]; do cd ..; done
-		if [ -d ./build ]; then
-			TARGET=$(pwd)
-			echo -e "$TARGET"
+		if [ -d .git ] && [ -f CMakeLists.txt ];then
+          TARGET=$(pwd)
+		  echo -e "Has .git and CMakeLists.txt. Assuming it's a project."
 		else
-			echo -e "\n[ERROR] You need to specify a target project. (Though I can guess the project if a PROJECT/build directory exists.\n"
+			while [ ! -f .development_root ] && [ ! -d ./build ] && [ ! -d dev ]; do echo "%$(pwd) ";cd ..; done
+			echo "!!$(pwd)"
+			if [ -d ./build ]; then
+				TARGET=$(pwd)
+				echo -e "$TARGET"
+			else
+				echo -e "\n[ERROR] You need to specify a target project. (Though I can guess the project if a PROJECT/build directory exists.\n"
+			fi
 		fi
 	else
 		TARGET=${1%/}

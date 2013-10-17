@@ -18,6 +18,7 @@ SCRIPTNAME=$0
 # Import our functions
 source teh_functions
 
+pushd ./ &>/dev/null 
 # If local or user global config file exists, use it, otherwise error.
 while [ ! -f .development_root ] && [ ! -d ./build ] && [ ! -d dev ]; do cd ..; done
 if [ -f ./.tehrc ]; then
@@ -33,6 +34,8 @@ GIT_DIR="/home/drc/git"
 REPOSITORY=raring_drc
 ===
 fi
+
+popd &>/dev/null #Return to the directory we started from
 
 # Legacy config files don't have GIT_DIR
 if [ -z $GIT_DIR ]; then
@@ -126,7 +129,6 @@ case "$1" in
 
 	locate) locate_project ${2}
 	;;
-	cd) 
 
 
 	setup) 
@@ -258,18 +260,18 @@ case "$1" in
 ;;
 on)
 	locate_project ${2}
-	goto_development_root
-
 	
+	TARGET=$(pwd)
+	echo "Target: $TARGET"
 	if [ -d ${TARGET}/build ]; then
 		echo -e "\n ${TARGET} is already activated.\n"
 		exit 1
 	fi
-	[[ $(get_inactive) =~  ${TARGET} ]] && mkdir -p ${TARGET}/build
+	mkdir -p ${TARGET}/build
 ;;
 off)
 	locate_project ${2}
-	goto_development_root
+	TARGET=$(pwd)
 	
 	if [ ! -d ${TARGET}/build ]; then
 		echo -e "\n ${TARGET} is either already deactivated or is not a project.\n"
