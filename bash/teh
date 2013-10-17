@@ -19,6 +19,7 @@ SCRIPTNAME=$0
 source teh_functions
 
 # If local or user global config file exists, use it, otherwise error.
+try_goto_development_root
 if [ -f ./.tehrc ]; then
 	source ./.tehrc
 elif [ -f ~/.tehrc ]; then
@@ -309,7 +310,7 @@ rebuild) # Build project
 ;;
 
 set_config) #Setup local config file
-		teh_config
+		teh_config ${2}
 ;;
 
 get_cert) #Grab an authentication certificate from the server
