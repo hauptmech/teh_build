@@ -98,7 +98,7 @@ macro (teh_create_config_file MY_LIBRARY_NAME INC_PATH_INDICATOR_FILE )
 	find_file(CONF_FILE_PATH libConfig.cmake.in PATHS ${CMAKE_MODULE_PATH} )
 	configure_file(${CONF_FILE_PATH}
 				  "${TEH_LIBRARY_NAME}Config.cmake" @ONLY)
-	install(FILES "${TEH_LIBRARY_NAME}Config.cmake" DESTINATION lib/${TEH_LIBRARY_NAME})
+	install(FILES "${PROJECT_BINARY_DIR}/${TEH_LIBRARY_NAME}Config.cmake" DESTINATION lib/${TEH_LIBRARY_NAME})
 
 endmacro()
 
