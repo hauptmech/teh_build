@@ -391,19 +391,10 @@ function new_repo
 		select what_to_do in "Use bin (exe) template?" "Use library template?" "Abort!"; do
 			case $REPLY in
 				1) 
-                    pushd utils/Demo_Application
-                    git checkout latest
-                    popd
-                    cp -ar utils/Demo_Application/* $1; rm -rf $1/.git $1/build; break;;
+                    cp -ar utils/teh_build/templates/bin_template/* $1;  break;;
  
 				2) 
-					cd Demo_Library; git checkout latest; cd .. 
-                    pushd utils/Demo_Library
-                    git checkout latest
-                    popd
-
-					#TODO: return to previous state (tag current before chkout. delete tag after done)
-                    cp -ar utils/Demo_Library/* $1; rm -rf $1/.git $1/build; break;;
+                    cp -ar utils/teh_build/templates/lib_template/* $1;  break;;
 
 				3) echo "Aborting new repo!"; exit ;;
 			esac

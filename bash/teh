@@ -155,7 +155,7 @@ case "$1" in
 		echo -e "Cloning Build_Tools, CMakeModules, Demo_Library, Demo_Application"
 
 		mkdir -p utils; cd utils
-		git clone https://github.com/hauptmech/teh_build.git Build_Tools
+		git clone https://github.com/hauptmech/teh_build.git teh_build
 		#git clone $SERVER_USER@$SERVER_NAME:git/utils/Demo_Application.git
 		#git clone $SERVER_USER@$SERVER_NAME:git/utils/Demo_Library.git
 
@@ -187,8 +187,7 @@ case "$1" in
 
 	new)	# Create a new repository on the server
 		goto_development_root
-		echo -e "This function disabled temporarily until templates are ready..."
-		#new_repo ${TARGET}
+		new_repo ${TARGET}
 	;;
 
 	publish) 
