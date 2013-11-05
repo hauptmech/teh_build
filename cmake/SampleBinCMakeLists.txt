@@ -7,12 +7,16 @@
     cmake_minimum_required(VERSION 2.8)
 
     set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
-	include(teh-build-tools)
-	teh_find_local_libraries()()
+	include(teh-build)
+	teh_find_local_libraries()
 
 
 	# ./src holds our code and private *.h files
     include_directories(${CMAKE_SOURCE_DIR}/src)
+
+	find_package(PkgConfig)
+    pkg_check_modules(EIGEN3 eigen3)
+    INCLUDE_DIRECTORIES(${EIGEN3_INCLUDE_DIRS})
 
 
 	## Below is an example of using another library

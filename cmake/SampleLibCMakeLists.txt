@@ -29,7 +29,7 @@
     enable_language(Fortran)
 
     set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
-	include(teh-build-tools)
+	include(teh-build)
 	teh_find_local_libraries()
 
 	find_package(boost-numeric-bindings REQUIRED)
