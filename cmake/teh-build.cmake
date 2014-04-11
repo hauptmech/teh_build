@@ -12,7 +12,7 @@
 #		dependency chain so that upstream code that uses find_package()
 #		will also include this depency library.
 #
-# teh_add_target(LIBRAME) -	Add a target library from this project to the
+# teh_add_target(LIBNAME) -	Add a target library from this project to the
 #		list of libraries exposed with find_package()
 #
 # teh_create_config_file(MY_LIBRARY_NAME INC_PATH_INDICATOR_FILE) - 
@@ -99,10 +99,39 @@ macro (teh_create_config_file MY_LIBRARY_NAME INC_PATH_INDICATOR_FILE )
 #	message("Searching: \n    ${CMAKE_MODULE_PATH}\n    ${CMAKE_CURRENT_LIST_DIR}\n    ${TEH_BUILD_DIR}")
 	find_file(CONF_FILE_PATH libConfig.cmake.in PATHS ${CMAKE_MODULE_PATH} ${TEH_BUILD_DIR} )
 #    message("Found: ${CONF_FILE_PATH}")
-	configure_file(${CONF_FILE_PATH}
-				  "${TEH_LIBRARY_NAME}Config.cmake" @ONLY)
+	configure_file(${CONF_FILE_PATH} "${TEH_LIBRARY_NAME}Config.cmake" @ONLY)
 	install(FILES "${PROJECT_BINARY_DIR}/${TEH_LIBRARY_NAME}Config.cmake" DESTINATION lib/${TEH_LIBRARY_NAME})
 
+endmacro()
+
+
+# Macros for loading VAR=VALUE files
+# Load only variables that are in the provided parms list
+# Case sensitive
+# loadfile(MYINI_ "myfile.ini" "Name;Sex")
+macro(teh_ini PREFIX INFILE PARMS)
+file(STRINGS "${INFILE}" NEWBS REGEX ".*=.*")
+foreach(VAR IN LISTS PARMS)
+  foreach(LINE IN LISTS NEWBS)
+    if(LINE MATCHES "${VAR}.*=(.*)")
+      string(STRIP "${CMAKE_MATCH_1}" ${PREFIX}${VAR})
+    endif()
+  endforeach()
+  if(NOT ${PREFIX}${VAR})
+      message("MISSING ${VAR}")
+  endif()
+endforeach()
+endmacro()
+
+#Automatically assign a variable for each var in the file.
+macro(teh_ini_all PREFIX INFILE )
+file(STRINGS "${INFILE}" NEWBS REGEX ".*=.*")
+  foreach(LINE IN LISTS NEWBS)
+    if(LINE MATCHES "(.*)=(.*)")
+      string(STRIP "${CMAKE_MATCH_1}" VAR)
+      string(STRIP "${CMAKE_MATCH_2}" ${PREFIX}${VAR})
+    endif()
+  endforeach()
 endmacro()
 
 

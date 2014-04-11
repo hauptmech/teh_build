@@ -1,3 +1,4 @@
+#!/bin/sh
 _teh()
 {
   local cur prev active cmds
