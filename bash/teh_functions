@@ -233,7 +233,7 @@ function teh_config
 
 These configuration parameters are used to automate typical accesses to upstream servers.
 $SERVER_NAME, $GIT_DIR and $SERVER_USER are used for listing and accessing git repositories.
-$REPOSITORY is to support publishing packages to an ubuntu package server and targeted (fast)
+$PKG_* is to support publishing packages to an ubuntu package server and targeted (fast)
 upgrades from that server.
 
 ===
@@ -242,12 +242,16 @@ upgrades from that server.
 	read -p "Enter the server address ex:(some_server.com | local_name | 192.168.1.111): " MY_SERVER_ADDR
 	read -p "Enter the server user name: " MY_SERVER_USER 
 	read -p "Enter the git dir on the server (/home/user/git): " MY_GIT_DIR
-	read -p "Enter the ubuntu repository ex:(custom_repo_name): " MY_REPOSITORY
+	read -p "Enter the ubuntu repository base name ex:(drc): " MY_REPOSITORY
 
 	echo -e "SERVER_NAME=${MY_SERVER_ADDR}" > ./.tehrc
 	echo -e "SERVER_USER=${MY_SERVER_USER}" >> ./.tehrc
 	echo -e "GIT_DIR=${MY_GIT_DIR}" >> ./.tehrc
-	echo -e "REPOSITORY=${MY_REPOSITORY}" >> ./.tehrc
+	echo -e "PKG_BASE_NAME=${MY_REPOSITORY}" >> ./.tehrc
+	echo -e "PKG_SERVER_PROTOCOL=ssh" >> ./.tehrc
+	echo -e "PKG_SERVER_NAME=${MY_SERVER_ADDR}" >> ./.tehrc
+	echo -e "PKG_SERVER_USER=${MY_SERVER_USER}" >> ./.tehrc
+	echo -e "PKG_SERVER_ROOT=/dists" >> ./.tehrc
 
 }
 # Helper function to make sure git set up correctly
@@ -304,10 +308,10 @@ function get_cert
 function setup_https_package_repo
 {
 		sudo mkdir -p /usr/local/share/ca-certificates
-		sudo scp $SERVER_USER@$SERVER_NAME:${SERVER_NAME}.crt /usr/local/share/ca-certificates
+		sudo scp $PKG_SERVER_USER@$PKG_SERVER_NAME:${PKG_SERVER_NAME}.crt /usr/local/share/ca-certificates
 		sudo update-ca-certificates
 
-		sudo sh -c "echo \"deb https://$SERVER_NAME/ubuntu ${REPOSITORY}/\" > /etc/apt/sources.list.d/${REPOSITORY}.list"
+		sudo sh -c "echo \"deb $PKG_SERVER_PROTOCOL://$PKG_SERVER_NAME ${PKG_BASE_NAME} local\" > /etc/apt/sources.list.d/${PKG_BASE_NAME}.list"
 		sudo apt-get update
 		
 		if [ ! $? -eq 0 ]; then
@@ -317,8 +321,8 @@ function setup_https_package_repo
 #Add package repository to sources.list.d
 function setup_http_package_repo
 {
-		echo "deb http://$SERVER_NAME/ubuntu ${REPOSITORY}/" > ~/.${REPOSITORY}.list
-		sudo cp ~/.${REPOSITORY}.list /etc/apt/sources.list.d/${REPOSITORY}.list
+		echo "deb $PKG_SERVER_PROTOCOL://$PKG_SERVER_NAME ${PKG_BASE_NAME} local" > ~/.${PKG_BASE_NAME}.list
+		sudo cp ~/.${PKG_BASE_NAME}.list /etc/apt/sources.list.d/${PKG_BASE_NAME}.list
 		sudo apt-get update
 		
 		if [ ! $? -eq 0 ]; then

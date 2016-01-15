@@ -27,11 +27,19 @@ elif [ -f ~/.tehrc ]; then
 	source ~/.tehrc
 else
 	echo -e "\n[ERROR] Could not find config file (~/.tehrc or ./.tehrc). It needs the following variables defined...\n"
-cat <<"==="
+	cat <<"==="
 SERVER_USER=drc
 SERVER_NAME=debiangpm
 GIT_DIR="/home/drc/git"
-REPOSITORY=raring_drc
+
+GIT_SERVER_NAME=${SERVER_NAME}
+GIT_SERVER_USER=${SERVER_USER}
+PKG_BASE_NAME=drc
+PKG_SERVER_PROTOCOL=ssh #http https
+PKG_SERVER_NAME=${SERVER_NAME}
+PKG_SERVER_USER=drc
+PKG_SERVER_ROOT=/dists
+
 ===
 fi
 
@@ -167,7 +175,7 @@ case "$1" in
 	setup_repo)	# Install ssl keys and sources.list file
 		setup_http_package_repo ;;
 
-	upgrade) upgrade_packages ${REPOSITORY}.list
+	upgrade) upgrade_packages ${PKG_BASE_NAME}.list
 		;;
 
 	get)	# Get an existing repository
@@ -239,7 +247,7 @@ case "$1" in
 		fi
 
 		if [ -d ${TARGET}/build ]; then 
-			cd ${TARGET}/build; 
+			pushd ${TARGET}/build; 
 		else 
 			echo "Project has not been built yet; do this manually!"; exit 
 		fi
@@ -247,9 +255,14 @@ case "$1" in
 		make		#Just to be sure 
 		cpack		#Finally do the packaging
 	
-		scp *.deb $SERVER_USER@$SERVER_NAME:/var/ubuntu_repo/${REPOSITORY}
-		echo "sh rebuild_package_index; ls -l /var/ubuntu_repo/${REPOSITORY}" | ssh $SERVER_USER@$SERVER_NAME /bin/bash
-		cd ../..
+		#scp *.deb $SERVER_USER@$SERVER_NAME:/var/ubuntu_repo/${REPOSITORY}
+		#ToDo: Extract 
+		DEBARCH=$(dpkg --info *.deb | grep -oP 'Architecture: \K.*' | head -n 1)
+		DEBLOCAL=${PKG_SERVER_ROOT}/${PKG_BASE_NAME}/local
+		scp *.deb $PKG_SERVER_USER@$PKG_SERVER_NAME:${DEBLOCAL}/binary-${DEBARCH}
+
+		echo "cd ${DEBLOCAL}; bash update.sh; ls -l ${DEBLOCAL}/binary-${DEBARCH}" | ssh $PKG_SERVER_USER@$PKG_SERVER_NAME /bin/bash
+		popd
 		ls ${TARGET}/build | grep deb
 		
 
@@ -260,7 +273,7 @@ case "$1" in
 on)
 	locate_project ${2}
 	
-	TARGET=$(pwd)
+	#TARGET=$(pwd)
 	echo "Target: $TARGET"
 	if [ -d ${TARGET}/build ]; then
 		echo -e "\n ${TARGET} is already activated.\n"
@@ -270,7 +283,7 @@ on)
 ;;
 off)
 	locate_project ${2}
-	TARGET=$(pwd)
+#	TARGET=$(pwd)
 	
 	if [ ! -d ${TARGET}/build ]; then
 		echo -e "\n ${TARGET} is either already deactivated or is not a project.\n"
