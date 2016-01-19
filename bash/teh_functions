@@ -251,7 +251,7 @@ upgrades from that server.
 	echo -e "PKG_BASE_NAME=${MY_REPOSITORY}" >> ./.tehrc
 	echo -e "PKG_SERVER_ROOT=${MY_REPO_ROOT}" >> ./.tehrc
 
-cat - <<"==="
+cat - >> ./.tehrc <<"==="
 
 #The following reflects our convention. Change it if you have specific needs.
 GIT_SERVER_NAME=${SERVER_NAME}

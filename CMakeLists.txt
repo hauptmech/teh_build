@@ -32,10 +32,10 @@ set(CPACK_PACKAGE_VERSION_MAJOR "0")
 set(CPACK_PACKAGE_VERSION_MINOR "0")
 set(CPACK_PACKAGE_VERSION_PATCH "20")
 set(CPACK_DEBIAN_PACKAGE_DEPENDS "")
+set(CPACK_DEBIAN_PACKAGE_ARCHITECTURE "all")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Build tools for newbs!")
 set(CPACK_PACKAGE_DESCRIPTION "The teh script automates creating and publish repositories.")
 set(CPACK_PACKAGE_CONTACT "traveler.hauptman@iit.it")
 
 include(CPack)
-
 
