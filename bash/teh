@@ -139,7 +139,7 @@ case "$1" in
 	;;
 
 
-	setup) 
+	init) 
 		if [ -z ${TARGET} ]; then
 			TARGET="./"
         fi

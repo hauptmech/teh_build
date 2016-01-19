@@ -160,8 +160,8 @@ Usage:
 
   setup
   =====
-  teh setup <path>            # Configure folder as the root development
-                              # folder for a group of projects
+  teh init <path>            # Configure folder as the root development
+                              #     folder for a group of projects
   teh set_config <path>       # Update or Create a config file 
   teh setup_ssh_keys          # Install the keys for the server
   teh config                  # Dump the current config file
@@ -243,15 +243,24 @@ upgrades from that server.
 	read -p "Enter the server user name: " MY_SERVER_USER 
 	read -p "Enter the git dir on the server (/home/user/git): " MY_GIT_DIR
 	read -p "Enter the ubuntu repository base name ex:(drc): " MY_REPOSITORY
+	read -p "Enter the ubuntu repository root ex:(/dists): " MY_REPO_ROOT
 
 	echo -e "SERVER_NAME=${MY_SERVER_ADDR}" > ./.tehrc
 	echo -e "SERVER_USER=${MY_SERVER_USER}" >> ./.tehrc
 	echo -e "GIT_DIR=${MY_GIT_DIR}" >> ./.tehrc
 	echo -e "PKG_BASE_NAME=${MY_REPOSITORY}" >> ./.tehrc
-	echo -e "PKG_SERVER_PROTOCOL=ssh" >> ./.tehrc
-	echo -e "PKG_SERVER_NAME=${MY_SERVER_ADDR}" >> ./.tehrc
-	echo -e "PKG_SERVER_USER=${MY_SERVER_USER}" >> ./.tehrc
-	echo -e "PKG_SERVER_ROOT=/dists" >> ./.tehrc
+	echo -e "PKG_SERVER_ROOT=${MY_REPO_ROOT}" >> ./.tehrc
+
+cat - <<"==="
+
+#The following reflects our convention. Change it if you have specific needs.
+GIT_SERVER_NAME=${SERVER_NAME}
+GIT_SERVER_USER=${SERVER_USER}
+PKG_SERVER_PROTOCOL=ssh #http https
+PKG_SERVER_NAME=${SERVER_NAME}
+PKG_SERVER_USER=${SERVER_USER}
+===
+
 
 }
 # Helper function to make sure git set up correctly
@@ -378,7 +387,7 @@ function new_repo
 
 	# We need to make a multi-level directory if necessary.
 	echo -e "\nChecking to see if this repo is on the server...\n"
-	echo "[ ! -d ${GIT_DIR}/${1}.git ] && mkdir -p ${GIT_DIR}/${1}.git" | ssh $SERVER_USER@$SERVER_NAME /bin/bash &>/dev/null
+	echo "[ ! -d ${GIT_DIR}/${1} ] && mkdir -p ${GIT_DIR}/${1}" | ssh $GIT_SERVER_USER@$GIT_SERVER_NAME /bin/bash &>/dev/null
 	if [ $? -eq 0 ]; then
 		existed=0
 		echo "There is no repo of this name on the server yet."
@@ -404,9 +413,9 @@ function new_repo
 			esac
 		done
 		cd $1; git init; git add .; git commit -m 'First!';
-		git remote add origin $SERVER_USER@$SERVER_NAME:/home/$SERVER_USER/git/${1}.git
+		git remote add origin $GIT_SERVER_USER@$GIT_SERVER_NAME:${GIT_DIR}/${1}
 		echo -e "\nCreating this repo on the server...\n"
-		echo "git init --bare ${GIT_DIR}/${1}.git" | ssh $SERVER_USER@$SERVER_NAME /bin/bash &>/dev/null
+		echo "git init --bare ${GIT_DIR}/${1}" | ssh $GIT_SERVER_USER@$GIT_SERVER_NAME /bin/bash &>/dev/null
 		git push origin master
 		cd ..
 	elif [ -d $1/.git ]; then
@@ -415,9 +424,9 @@ function new_repo
 			echo -e "      Pushing it up to the new repo on the server!\n"
 			cd $1; 	
 			git remote rm origin &>/dev/null; \
-			git remote add origin $SERVER_USER@$SERVER_NAME:git/${1}.git &>/dev/null
+			git remote add origin $GIT_SERVER_USER@$GIT_SERVER_NAME:${GIT_DIR}/${1} &>/dev/null
 			echo -e "\nCreating this repo on the server...\n"
-			echo "git init --bare ${GIT_DIR}/${1}.git" | ssh $SERVER_USER@$SERVER_NAME /bin/bash &>/dev/null
+			echo "git init --bare ${GIT_DIR}/${1}" | ssh $GIT_SERVER_USER@$GIT_SERVER_NAME /bin/bash &>/dev/null
 
 			git push origin master
 			cd ..
