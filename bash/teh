@@ -121,17 +121,17 @@ case "$1" in
 
 	list) 
 		if [ -z $2 ]; then
-			echo "ls ${GIT_DIR} " | ssh $SERVER_USER@$SERVER_NAME /bin/bash
+			echo "ls ${GIT_DIR} " | ssh $GIT_SERVER_USER@$GIT_SERVER_NAME /bin/bash
 		else
-			echo "ls ${GIT_DIR}/${TARGET} " | ssh $SERVER_USER@$SERVER_NAME /bin/bash
+			echo "ls ${GIT_DIR}/${TARGET} " | ssh $GIT_SERVER_USER@$GIT_SERVER_NAME /bin/bash
 		fi
 		;;
 
 	listall) 
 		if [ -z $2 ]; then
-			echo "cd ${GIT_DIR};find . -type d -name \"*.git\" " | ssh $SERVER_USER@$SERVER_NAME /bin/bash
+			echo "cd ${GIT_DIR};find . -type d -name \"*.git\" " | ssh $GIT_SERVER_USER@$GIT_SERVER_NAME /bin/bash
 		else
-			echo "cd ${GIT_DIR}/${TARGET};find . -type d -name \"*.git\"" | ssh $SERVER_USER@$SERVER_NAME /bin/bash
+			echo "cd ${GIT_DIR}/${TARGET};find . -type d -name \"*.git\"" | ssh $GIT_SERVER_USER@$GIT_SERVER_NAME /bin/bash
 		fi
 		;;
 
@@ -186,7 +186,7 @@ case "$1" in
 		[ -d ${TARGET} ] && echo -e "\n[INFO] Repository already exists!\n" && exit 0
 	
 		mkdir -p ${TARGET}
-		git clone $SERVER_USER@$SERVER_NAME:git/${TARGET}.git ${TARGET}
+		git clone $GIT_SERVER_USER@$GIT_SERVER_NAME:${GIT_DIR}/${TARGET} ${TARGET}
 		
 		if [ ! $? -eq 0 ]; then
 			echo -e "\n[ERROR] git clone failed... double check the name (or server ip address hardcoded in the teh script\n"

@@ -320,7 +320,7 @@ function setup_https_package_repo
 		sudo scp $PKG_SERVER_USER@$PKG_SERVER_NAME:${PKG_SERVER_NAME}.crt /usr/local/share/ca-certificates
 		sudo update-ca-certificates
 
-		sudo sh -c "echo \"deb $PKG_SERVER_PROTOCOL://$PKG_SERVER_NAME ${PKG_BASE_NAME} local\" > /etc/apt/sources.list.d/${PKG_BASE_NAME}.list"
+		sudo sh -c "echo \"deb $PKG_SERVER_PROTOCOL://$PKG_SERVER_USER@$PKG_SERVER_NAME ${PKG_BASE_NAME} local\" > /etc/apt/sources.list.d/${PKG_BASE_NAME}.list"
 		sudo apt-get update
 		
 		if [ ! $? -eq 0 ]; then
@@ -330,7 +330,7 @@ function setup_https_package_repo
 #Add package repository to sources.list.d
 function setup_http_package_repo
 {
-		echo "deb $PKG_SERVER_PROTOCOL://$PKG_SERVER_NAME ${PKG_BASE_NAME} local" > ~/.${PKG_BASE_NAME}.list
+		echo "deb $PKG_SERVER_PROTOCOL://$PKG_SERVER_USER@$PKG_SERVER_NAME ${PKG_BASE_NAME} local" > ~/.${PKG_BASE_NAME}.list
 		sudo cp ~/.${PKG_BASE_NAME}.list /etc/apt/sources.list.d/${PKG_BASE_NAME}.list
 		sudo apt-get update
 		
